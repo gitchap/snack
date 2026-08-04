@@ -9,7 +9,7 @@ export default function ServiceScreen() {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:3005/api/orders/active')
+    fetch('/api/orders/active')
       .then(res => res.json())
       .then(data => setOrders(data));
 

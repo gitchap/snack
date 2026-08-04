@@ -12,7 +12,7 @@ export default function OrderScreen() {
   const [cart, setCart] = useState([]);
   
   useEffect(() => {
-    fetch('http://localhost:3005/api/menu')
+    fetch('/api/menu')
       .then(res => res.json())
       .then(data => {
         setMenu(data);

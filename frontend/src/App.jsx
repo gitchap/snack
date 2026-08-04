@@ -8,7 +8,7 @@ import KitchenScreen from './pages/KitchenScreen';
 import ServiceScreen from './pages/ServiceScreen';
 import AdminScreen from './pages/AdminScreen';
 
-const socket = io('http://localhost:3005');
+const socket = io();
 
 export const SocketContext = React.createContext();
 export const AuthContext = React.createContext();

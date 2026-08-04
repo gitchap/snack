@@ -16,7 +16,7 @@ export default function AdminScreen() {
   }, []);
 
   const fetchMenu = () => {
-    fetch('http://localhost:3005/api/menu')
+    fetch('/api/menu')
       .then(res => res.json())
       .then(data => {
         setCategories(data);
@@ -28,7 +28,7 @@ export default function AdminScreen() {
     e.preventDefault();
     if (!newItemName || !newItemPrice || !selectedCategory) return;
     
-    await fetch('http://localhost:3005/api/admin/menu', {
+    await fetch('/api/admin/menu', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
