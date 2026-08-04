@@ -93,15 +93,37 @@ app.delete('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
   }
 });
 
+app.put('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const { name, price, categoryId } = req.body;
+  const item = await prisma.menuItem.update({
+    where: { id: parseInt(req.params.itemId) },
+    data: { name, price, categoryId: parseInt(categoryId) },
+    include: { options: true }
+  });
+  res.json(item);
+});
+
 app.post('/api/admin/menu/:itemId/options', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, choices } = req.body; // choices is comma-separated string e.g. "Lettuce,Mayo,Pickles"
+  const { name, choices, defaultOn } = req.body;
   const option = await prisma.itemOption.create({
     data: {
       menuItemId: parseInt(req.params.itemId),
       name,
-      choices
+      choices,
+      defaultOn: defaultOn !== false // defaults to true unless explicitly false
     }
+  });
+  res.json(option);
+});
+
+app.put('/api/admin/options/:optionId', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const { name, choices, defaultOn } = req.body;
+  const option = await prisma.itemOption.update({
+    where: { id: parseInt(req.params.optionId) },
+    data: { name, choices, defaultOn }
   });
   res.json(option);
 });

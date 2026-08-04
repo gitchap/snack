@@ -12,6 +12,7 @@ export default function OrderScreen() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [cart, setCart] = useState([]);
   const [customizingItem, setCustomizingItem] = useState(null);
+  const [cashTendered, setCashTendered] = useState('');
   
   useEffect(() => {
     fetch('/api/menu')
@@ -139,7 +140,49 @@ export default function OrderScreen() {
               <span>Total:</span>
               <span>${cartTotal.toFixed(2)}</span>
             </div>
-            <button className="btn btn-success" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }} onClick={submitOrder} disabled={cart.length === 0}>
+
+            <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Cash Tendered</label>
+              <input
+                type="number"
+                className="input"
+                placeholder="$0.00"
+                min="0"
+                step="0.01"
+                value={cashTendered}
+                onChange={e => setCashTendered(e.target.value)}
+                style={{ fontSize: '1.2rem', fontWeight: 'bold' }}
+              />
+              {cashTendered !== '' && parseFloat(cashTendered) >= cartTotal && (
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)',
+                  borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem',
+                  fontSize: '1.1rem', fontWeight: 'bold', color: '#6ee7b7'
+                }}>
+                  <span>Change Due</span>
+                  <span>${(parseFloat(cashTendered) - cartTotal).toFixed(2)}</span>
+                </div>
+              )}
+              {cashTendered !== '' && parseFloat(cashTendered) < cartTotal && (
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)',
+                  borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem',
+                  fontSize: '1.1rem', fontWeight: 'bold', color: '#fca5a5'
+                }}>
+                  <span>Still Owed</span>
+                  <span>${(cartTotal - parseFloat(cashTendered)).toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              className="btn btn-success"
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+              onClick={() => { submitOrder(); setCashTendered(''); }}
+              disabled={cart.length === 0}
+            >
               Submit Order
             </button>
           </div>

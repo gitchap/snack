@@ -37,8 +37,9 @@ model MenuItem {
 
 model ItemOption {
   id         Int      @id @default(autoincrement())
-  name       String   // e.g., "Size", "Flavor", "Topping"
-  choices    String   // comma-separated values like "Small,Medium,Large"
+  name       String   // e.g., "Ingredients", "Extras"
+  choices    String   // comma-separated values like "Lettuce,Tomato,Mayo"
+  defaultOn  Boolean  @default(true) // true = all choices selected by default, false = none selected
   menuItemId Int
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
 }
