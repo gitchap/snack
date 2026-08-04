@@ -30,18 +30,18 @@ function OptionGroupRow({ opt, token, onSaved, onDeleted }) {
   if (editing) {
     return (
       <div style={{ background: 'rgba(0,0,0,0.15)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <input className="input" style={{ fontSize: '0.875rem', padding: '0.4rem 0.75rem' }} value={name} onChange={e => setName(e.target.value)} placeholder="Group name" />
-        <input className="input" style={{ fontSize: '0.875rem', padding: '0.4rem 0.75rem' }} value={choices} onChange={e => setChoices(e.target.value)} placeholder="Comma-separated choices" />
+        <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Group name" />
+        <input className="input" value={choices} onChange={e => setChoices(e.target.value)} placeholder="Comma-separated choices" />
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
             <input type="checkbox" checked={defaultOn} onChange={e => setDefaultOn(e.target.checked)} />
             Default ON (pre-selected)
           </label>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-success" style={{ flex: 1, padding: '0.4rem' }} onClick={save}>Save</button>
-          <button className="btn btn-outline" style={{ padding: '0.4rem 0.75rem' }} onClick={() => setEditing(false)}>Cancel</button>
-          <button className="btn btn-danger" style={{ padding: '0.4rem 0.75rem' }} onClick={del}>Delete</button>
+          <button className="btn btn-success" style={{ flex: 1 }} onClick={save}>Save</button>
+          <button className="btn btn-outline" onClick={() => setEditing(false)}>Cancel</button>
+          <button className="btn btn-danger" onClick={del}>Delete</button>
         </div>
       </div>
     );
@@ -49,13 +49,13 @@ function OptionGroupRow({ opt, token, onSaved, onDeleted }) {
 
   return (
     <div
-      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.3rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.4rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
       onClick={() => setEditing(true)}
     >
       <span>
         <strong style={{ color: 'var(--text-main)' }}>{opt.name}:</strong> {opt.choices}
       </span>
-      <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', color: opt.defaultOn !== false ? 'var(--success)' : 'var(--warning)' }}>
+      <span style={{ marginLeft: '0.5rem', fontSize: '0.875rem', fontWeight: '600', color: opt.defaultOn !== false ? 'var(--success)' : 'var(--warning)' }}>
         {opt.defaultOn !== false ? 'Default ON' : 'Default OFF'}
       </span>
     </div>
@@ -81,15 +81,15 @@ function NewOptionForm({ itemId, token, onAdded }) {
   };
 
   return (
-    <form onSubmit={add} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'rgba(139,92,246,0.08)', border: '1px dashed rgba(139,92,246,0.3)', borderRadius: 'var(--radius-sm)', padding: '0.75rem' }}>
-      <p style={{ fontSize: '0.8rem', color: 'var(--primary)', margin: 0 }}>+ Add Option Group</p>
-      <input className="input" style={{ fontSize: '0.875rem', padding: '0.4rem 0.75rem' }} placeholder="Group name (e.g. Ingredients)" value={name} onChange={e => setName(e.target.value)} />
-      <input className="input" style={{ fontSize: '0.875rem', padding: '0.4rem 0.75rem' }} placeholder="Choices: Lettuce, Tomato, Mayo, Pickles" value={choices} onChange={e => setChoices(e.target.value)} />
-      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+    <form onSubmit={add} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(139,92,246,0.08)', border: '1px dashed rgba(139,92,246,0.3)', borderRadius: 'var(--radius-sm)', padding: '1rem' }}>
+      <p style={{ color: 'var(--primary)', margin: 0, fontWeight: '600' }}>+ Add Option Group</p>
+      <input className="input" placeholder="Group name (e.g. Ingredients)" value={name} onChange={e => setName(e.target.value)} />
+      <input className="input" placeholder="Choices: Lettuce, Tomato, Mayo, Pickles" value={choices} onChange={e => setChoices(e.target.value)} />
+      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
         <input type="checkbox" checked={defaultOn} onChange={e => setDefaultOn(e.target.checked)} />
         Default ON — all choices pre-selected (use for standard toppings; uncheck for add-ons)
       </label>
-      <button type="submit" className="btn btn-primary" style={{ padding: '0.4rem' }}>Add Group</button>
+      <button type="submit" className="btn btn-primary">Add Group</button>
     </form>
   );
 }
@@ -125,11 +125,11 @@ function MenuItemCard({ item, categories, token, onSaved, onDeleted }) {
       {!editing ? (
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <strong style={{ fontSize: '1.05rem' }}>{item.name}</strong>
-            <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>${item.price.toFixed(2)}</span>
+            <strong style={{ fontSize: '1.15rem' }}>{item.name}</strong>
+            <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.1rem' }}>${item.price.toFixed(2)}</span>
           </div>
           {item.options?.length > 0 && (
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+            <div style={{ color: 'var(--text-muted)', lineHeight: 1.7 }}>
               {item.options.map(o => (
                 <div key={o.id}>
                   <span style={{ color: opt_color(o.defaultOn) }}>● </span>
@@ -138,11 +138,11 @@ function MenuItemCard({ item, categories, token, onSaved, onDeleted }) {
               ))}
             </div>
           )}
-          <span style={{ fontSize: '0.75rem', color: 'var(--primary)', opacity: 0.8 }}>Click to edit</span>
+          <span style={{ fontSize: '0.875rem', color: 'var(--primary)', opacity: 0.8 }}>Click to edit</span>
         </>
       ) : (
         <>
-          <input className="input" style={{ fontSize: '0.95rem' }} value={name} onChange={e => setName(e.target.value)} placeholder="Item name" />
+          <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Item name" />
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <input type="number" step="0.01" className="input" value={price} onChange={e => setPrice(e.target.value)} placeholder="Price" style={{ flex: 1 }} />
             <select className="input" value={categoryId} onChange={e => setCategoryId(parseInt(e.target.value))} style={{ flex: 1 }}>
@@ -152,8 +152,8 @@ function MenuItemCard({ item, categories, token, onSaved, onDeleted }) {
 
           {/* Existing option groups */}
           {item.options?.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Option Groups (click to edit):</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <p style={{ color: 'var(--text-muted)', margin: 0, fontWeight: '600' }}>Option Groups (click to edit):</p>
               {item.options.map(opt => (
                 <OptionGroupRow key={opt.id} opt={opt} token={token} onSaved={onSaved} onDeleted={onSaved} />
               ))}
@@ -299,27 +299,27 @@ export default function AdminScreen() {
 
               {/* Pending option groups preview */}
               {pendingOptions.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {pendingOptions.map((o, i) => (
-                    <div key={i} style={{ fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.3rem 0.5rem', background: 'rgba(0,0,0,0.15)', borderRadius: 'var(--radius-sm)' }}>
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.75rem', background: 'rgba(0,0,0,0.15)', borderRadius: 'var(--radius-sm)' }}>
                       <span><strong>{o.name}</strong>: {o.choices}</span>
-                      <span style={{ color: o.defaultOn ? 'var(--success)' : 'var(--warning)', fontSize: '0.75rem' }}>{o.defaultOn ? 'ON' : 'OFF'}</span>
-                      <button type="button" style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} onClick={() => setPendingOptions(prev => prev.filter((_, j) => j !== i))}>×</button>
+                      <span style={{ color: o.defaultOn ? 'var(--success)' : 'var(--warning)', fontWeight: '600', marginLeft: '0.5rem' }}>{o.defaultOn ? 'ON' : 'OFF'}</span>
+                      <button type="button" style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem', marginLeft: '0.5rem' }} onClick={() => setPendingOptions(prev => prev.filter((_, j) => j !== i))}>×</button>
                     </div>
                   ))}
                 </div>
               )}
 
               {/* Add option group inline */}
-              <div style={{ background: 'rgba(139,92,246,0.08)', border: '1px dashed rgba(139,92,246,0.3)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <p style={{ fontSize: '0.8rem', color: 'var(--primary)', margin: 0 }}>+ Option Group (optional)</p>
-                <input className="input" style={{ fontSize: '0.875rem', padding: '0.4rem 0.75rem' }} placeholder="Group name" value={newOptName} onChange={e => setNewOptName(e.target.value)} />
-                <input className="input" style={{ fontSize: '0.875rem', padding: '0.4rem 0.75rem' }} placeholder="Choices: Lettuce, Tomato, Mayo" value={newOptChoices} onChange={e => setNewOptChoices(e.target.value)} />
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              <div style={{ background: 'rgba(139,92,246,0.08)', border: '1px dashed rgba(139,92,246,0.3)', borderRadius: 'var(--radius-sm)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <p style={{ color: 'var(--primary)', margin: 0, fontWeight: '600' }}>+ Option Group (optional)</p>
+                <input className="input" placeholder="Group name" value={newOptName} onChange={e => setNewOptName(e.target.value)} />
+                <input className="input" placeholder="Choices: Lettuce, Tomato, Mayo" value={newOptChoices} onChange={e => setNewOptChoices(e.target.value)} />
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
                   <input type="checkbox" checked={newOptDefaultOn} onChange={e => setNewOptDefaultOn(e.target.checked)} />
                   Default ON (pre-selected when ordering)
                 </label>
-                <button type="button" className="btn btn-outline" style={{ padding: '0.4rem' }} onClick={addPendingOption}>Add Group</button>
+                <button type="button" className="btn btn-outline" onClick={addPendingOption}>Add Group</button>
               </div>
 
               <button type="submit" className="btn btn-primary" style={{ padding: '0.85rem' }}>Create Item</button>
