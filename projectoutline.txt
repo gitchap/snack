@@ -1,0 +1,103 @@
+2026-08-04 16:42:01 EDT
+
+## Updated High-Level Outline: Church Snack Shack App
+
+---
+
+## 1. Core Workflow & Operations
+
+```
+[Screen 1: Order Taking]  -->  [Screen 2: Kitchen Prep]  -->  [Screen 3: Serving & Distribution]
+   (Touch - Input)                 (Touch - Prep)                     (Touch - Handout)
+
+```
+
+1. **Order Creation (Screen 1):** Order taker taps items and options, accepts the order, and submits it.
+2. **Kitchen Preparation (Screen 2):** Kitchen staff sees incoming orders, prepares the hot food, and taps **"Food Ready"** for the whole ticket once cooked.
+3. **Serving & Item-Level Handout (Screen 3):** Server sees the overall order along with individual item checkboxes (e.g., drinks, pre-packaged snacks, cooked items). They check off items as they fulfill/hand them over.
+4. **Order Completion (Screen 3):** Once all items are checked off, the order is cleared from the queue.
+
+---
+
+## 2. Updated Screen Interfaces & Logic
+
+### Screen 1: Order Input (`/order`) — Touchscreen
+
+* Large, touch-friendly category tabs and menu item buttons.
+* Option/modifier selections (e.g., toppings, flavors, sizes).
+* Active cart summary with a clear **"Submit Order"** button that generates an incrementing daily order number.
+
+---
+
+### Screen 2: Kitchen Preparation (`/kitchen`) — Touchscreen
+
+* Display of incoming orders focused on food prep.
+* Clear visual distinction between new orders and orders in progress.
+* Simple interaction model: A single prominent **"Food Ready"** button per ticket to alert the front server that hot food is on the counter.
+
+---
+
+### Screen 3: Serving & Distribution (`/service`) — Touchscreen
+
+* Displays all active tickets with an itemized checklist for each order.
+* Displays status indicators (e.g., "Kitchen: In Progress" vs. "Kitchen: Ready").
+* **Item-Level Fulfillment:**
+* Server directly checks off quick-serve items (like soda or chips).
+* Server checks off kitchen items as they are received and handed over.
+
+
+* **Auto-Clear or Final Tap:** Ticket automatically archives/clears when all individual items are marked complete, or after a final hand-off tap.
+
+---
+
+## 3. Revised Database Model (SQLite)
+
+```
++------------------+       +-------------------+       +-------------------+
+|     orders       |       |    order_items    |       |    menu_items     |
++------------------+       +-------------------+       +-------------------+
+| id               |1   *  | id                |   *  1| id                |
+| order_number     |-------| order_id          |-------| category_id       |
+| status           |       | menu_item_id      |       | name              |
+| kitchen_status   |       | quantity          |       | price             |
+| created_at       |       | item_status       |       +-------------------+
++------------------+       | options_snapshot  |
+                           +-------------------+
+
+```
+
+### Table Details
+
+* **`orders`**
+* `id` (INTEGER, Primary Key)
+* `order_number` (INTEGER) — Daily order sequence number.
+* `status` (TEXT) — `active`, `completed`, `cancelled`.
+* `kitchen_status` (TEXT) — `pending`, `ready` (tracks whole-ticket food prep state).
+* `created_at` (TIMESTAMP)
+
+
+* **`order_items`**
+* `id` (INTEGER, Primary Key)
+* `order_id` (INTEGER, Foreign Key)
+* `menu_item_id` (INTEGER, Foreign Key)
+* `quantity` (INTEGER)
+* `item_status` (TEXT) — `pending`, `fulfilled` (allows item-by-item tracking on Screen 3).
+* `options_snapshot` (TEXT/JSON) — Selected options/modifiers at order time.
+
+
+* **`categories`**, **`menu_items`**, and **`item_options`** handle the menu structure and modifiers.
+
+---
+
+## 4. Environment & Deployment Strategy
+
+* **Host System:** Windows OS running **Docker Desktop** (or native Linux container host).
+* **Application Architecture:**
+* Single-container web app running locally (e.g., Node.js/Express + Socket.io or FastAPI).
+* SQLite database stored on a mounted local volume for persistent data safety.
+
+
+* **Display Management:**
+* Single PC outputting to three touchscreen displays.
+* Windows Touch Calibration configured so touch inputs accurately map to their respective screens.
+* Three browser windows running in Kiosk mode (`F11`), each pinned to its route: `/order`, `/kitchen`, `/service`.

@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  pin       String
+  role      String   @default("staff") // admin, staff
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id        Int        @id @default(autoincrement())
+  name      String
+  menuItems MenuItem[]
+}
+
+model MenuItem {
+  id         Int          @id @default(autoincrement())
+  name       String
+  price      Float
+  categoryId Int
+  category   Category     @relation(fields: [categoryId], references: [id])
+  options    ItemOption[]
+  orderItems OrderItem[]
+}
+
+model ItemOption {
+  id         Int      @id @default(autoincrement())
+  name       String   // e.g., "Size", "Flavor", "Topping"
+  choices    String   // comma-separated values like "Small,Medium,Large"
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  orderNumber   Int
+  status        String      @default("active") // active, completed, cancelled
+  kitchenStatus String      @default("pending") // pending, ready
+  createdAt     DateTime    @default(now())
+  orderItems    OrderItem[]
+}
+
+model OrderItem {
+  id              Int      @id @default(autoincrement())
+  orderId         Int
+  order           Order    @relation(fields: [orderId], references: [id])
+  menuItemId      Int
+  menuItem        MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity        Int      @default(1)
+  itemStatus      String   @default("pending") // pending, fulfilled
+  optionsSnapshot String   // JSON representation of selected options
+}

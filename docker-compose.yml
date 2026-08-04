@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  snack-shack:
+    build: .
+    ports:
+      - "3005:3005"
+    volumes:
+      - ./backend/dev.db:/app/backend/dev.db
+    restart: unless-stopped
