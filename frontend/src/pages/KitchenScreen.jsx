@@ -36,6 +36,23 @@ export default function KitchenScreen() {
     socket.emit('update_kitchen_status', { orderId, status: 'ready' });
   };
 
+  const renderOptions = (optionsSnapshot) => {
+    if (!optionsSnapshot) return null;
+    try {
+      const parsed = typeof optionsSnapshot === 'string' ? JSON.parse(optionsSnapshot) : optionsSnapshot;
+      const parts = [];
+      Object.entries(parsed).forEach(([key, val]) => {
+        if (Array.isArray(val) && val.length > 0) {
+          parts.push(val.join(', '));
+        }
+      });
+      if (parts.length === 0) return null;
+      return <span className="options-tag">{parts.join(' | ')}</span>;
+    } catch (e) {
+      return null;
+    }
+  };
+
   return (
     <>
       <div className="topbar glass">
@@ -60,8 +77,11 @@ export default function KitchenScreen() {
             
             <div className="ticket-items">
               {order.orderItems.map(item => (
-                <div key={item.id} className="ticket-item">
-                  <span>{item.quantity}x {item.menuItem?.name || 'Unknown Item'}</span>
+                <div key={item.id} className="ticket-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                    <span>{item.quantity}x {item.menuItem?.name || 'Unknown Item'}</span>
+                  </div>
+                  {renderOptions(item.optionsSnapshot)}
                 </div>
               ))}
             </div>

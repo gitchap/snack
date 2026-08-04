@@ -45,6 +45,23 @@ export default function ServiceScreen() {
     socket.emit('fulfill_item', { itemId });
   };
 
+  const renderOptions = (optionsSnapshot) => {
+    if (!optionsSnapshot) return null;
+    try {
+      const parsed = typeof optionsSnapshot === 'string' ? JSON.parse(optionsSnapshot) : optionsSnapshot;
+      const parts = [];
+      Object.entries(parsed).forEach(([key, val]) => {
+        if (Array.isArray(val) && val.length > 0) {
+          parts.push(val.join(', '));
+        }
+      });
+      if (parts.length === 0) return null;
+      return <span className="options-tag">{parts.join(' | ')}</span>;
+    } catch (e) {
+      return null;
+    }
+  };
+
   return (
     <>
       <div className="topbar glass">
@@ -72,13 +89,17 @@ export default function ServiceScreen() {
                 <div 
                   key={item.id} 
                   className={`ticket-item ${item.itemStatus === 'fulfilled' ? 'fulfilled' : ''}`}
+                  style={{ flexDirection: 'column', alignItems: 'stretch' }}
                 >
-                  <span>{item.quantity}x {item.menuItem?.name || 'Unknown'}</span>
-                  {item.itemStatus === 'pending' && (
-                    <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => fulfillItem(item.id)}>
-                      Hand Off
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{item.quantity}x {item.menuItem?.name || 'Unknown'}</span>
+                    {item.itemStatus === 'pending' && (
+                      <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => fulfillItem(item.id)}>
+                        Hand Off
+                      </button>
+                    )}
+                  </div>
+                  {renderOptions(item.optionsSnapshot)}
                 </div>
               ))}
             </div>

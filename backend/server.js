@@ -50,12 +50,68 @@ app.post('/api/auth/login', async (req, res) => {
   res.json({ token, role: user.role });
 });
 
-// Admin REST API for Menu Items (Protected)
+// User Management APIs
+app.get('/api/admin/users', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const users = await prisma.user.findMany({
+    select: { id: true, username: true, role: true, createdAt: true }
+  });
+  res.json(users);
+});
+
+app.put('/api/admin/users/:id/pin', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const { pin } = req.body;
+  if (!pin || pin.trim().length === 0) return res.status(400).json({ error: 'PIN required' });
+  
+  const pinHash = await bcrypt.hash(pin, 10);
+  await prisma.user.update({
+    where: { id: parseInt(req.params.id) },
+    data: { pin: pinHash }
+  });
+  res.json({ success: true });
+});
+
+// Admin REST API for Menu Items & Options (Protected)
 app.post('/api/admin/menu', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   const { name, price, categoryId } = req.body;
   const item = await prisma.menuItem.create({ data: { name, price, categoryId } });
   res.json(item);
+});
+
+app.delete('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  try {
+    const itemId = parseInt(req.params.itemId);
+    // Delete associated item options first
+    await prisma.itemOption.deleteMany({ where: { menuItemId: itemId } });
+    await prisma.menuItem.delete({ where: { id: itemId } });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/admin/menu/:itemId/options', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  const { name, choices } = req.body; // choices is comma-separated string e.g. "Lettuce,Mayo,Pickles"
+  const option = await prisma.itemOption.create({
+    data: {
+      menuItemId: parseInt(req.params.itemId),
+      name,
+      choices
+    }
+  });
+  res.json(option);
+});
+
+app.delete('/api/admin/options/:optionId', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  await prisma.itemOption.delete({
+    where: { id: parseInt(req.params.optionId) }
+  });
+  res.json({ success: true });
 });
 
 // Get Menu (Public/Kiosk accessible)

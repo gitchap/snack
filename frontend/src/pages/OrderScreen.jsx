@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { SocketContext, AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
+import ItemCustomizerModal from '../components/ItemCustomizerModal';
 
 export default function OrderScreen() {
   const socket = useContext(SocketContext);
@@ -10,6 +11,7 @@ export default function OrderScreen() {
   const [menu, setMenu] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [cart, setCart] = useState([]);
+  const [customizingItem, setCustomizingItem] = useState(null);
   
   useEffect(() => {
     fetch('/api/menu')
@@ -20,8 +22,23 @@ export default function OrderScreen() {
       });
   }, []);
 
-  const addToCart = (item) => {
-    setCart([...cart, { ...item, cartId: Date.now(), quantity: 1, optionsSnapshot: {} }]);
+  const handleItemClick = (item) => {
+    if (item.options && item.options.length > 0) {
+      setCustomizingItem(item);
+    } else {
+      addToCart(item, {});
+    }
+  };
+
+  const addToCart = (item, optionsSnapshot) => {
+    setCart([...cart, { ...item, cartId: Date.now(), quantity: 1, optionsSnapshot }]);
+  };
+
+  const confirmCustomization = (selections) => {
+    if (customizingItem) {
+      addToCart(customizingItem, selections);
+      setCustomizingItem(null);
+    }
   };
 
   const removeFromCart = (cartId) => {
@@ -41,6 +58,17 @@ export default function OrderScreen() {
 
   const activeCategoryItems = menu.find(c => c.id === activeCategory)?.menuItems || [];
   const cartTotal = cart.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
+
+  const formatSnapshot = (snapshot) => {
+    if (!snapshot || Object.keys(snapshot).length === 0) return null;
+    const parts = [];
+    Object.entries(snapshot).forEach(([key, val]) => {
+      if (Array.isArray(val) && val.length > 0) {
+        parts.push(val.join(', '));
+      }
+    });
+    return parts.join(' | ');
+  };
 
   return (
     <>
@@ -72,9 +100,12 @@ export default function OrderScreen() {
           
           <div className="menu-grid">
             {activeCategoryItems.map(item => (
-              <div key={item.id} className="glass glass-card menu-item" onClick={() => addToCart(item)}>
+              <div key={item.id} className="glass glass-card menu-item" onClick={() => handleItemClick(item)}>
                 <h3>{item.name}</h3>
                 <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>${item.price.toFixed(2)}</span>
+                {item.options && item.options.length > 0 && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Customizable</span>
+                )}
               </div>
             ))}
           </div>
@@ -83,15 +114,23 @@ export default function OrderScreen() {
         <div className="glass glass-card cart-sidebar">
           <h2>Current Order</h2>
           <div className="cart-items">
-            {cart.map(item => (
-              <div key={item.cartId} className="cart-item glass">
-                <div>
-                  <strong>{item.name}</strong>
-                  <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>${item.price.toFixed(2)}</div>
+            {cart.map(item => {
+              const formattedOpts = formatSnapshot(item.optionsSnapshot);
+              return (
+                <div key={item.cartId} className="cart-item glass" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <strong>{item.name}</strong>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>${item.price.toFixed(2)}</div>
+                    </div>
+                    <button className="btn btn-icon btn-danger" onClick={() => removeFromCart(item.cartId)}>×</button>
+                  </div>
+                  {formattedOpts && (
+                    <span className="options-tag">{formattedOpts}</span>
+                  )}
                 </div>
-                <button className="btn btn-icon btn-danger" onClick={() => removeFromCart(item.cartId)}>×</button>
-              </div>
-            ))}
+              );
+            })}
             {cart.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '2rem' }}>Cart is empty</p>}
           </div>
           
@@ -106,6 +145,14 @@ export default function OrderScreen() {
           </div>
         </div>
       </div>
+
+      {customizingItem && (
+        <ItemCustomizerModal 
+          item={customizingItem}
+          onClose={() => setCustomizingItem(null)}
+          onConfirm={confirmCustomization}
+        />
+      )}
     </>
   );
 }
