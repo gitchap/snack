@@ -199,7 +199,22 @@ export default function AdminScreen() {
             <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <input className="input" placeholder="Item Name" value={newItemName} onChange={e => setNewItemName(e.target.value)} required />
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input type="number" step="0.01" className="input" placeholder="Price" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} required style={{ flex: 1 }} />
+                <div className="input" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: 1, padding: '0 0.85rem' }}>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 'bold' }}>$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1rem', fontFamily: 'inherit', padding: '0.75rem 0' }}
+                    placeholder="0.00"
+                    value={newItemPrice}
+                    onChange={e => setNewItemPrice(e.target.value)}
+                    onBlur={() => {
+                      const num = parseFloat(newItemPrice);
+                      if (!isNaN(num)) setNewItemPrice(num.toFixed(2));
+                    }}
+                    required
+                  />
+                </div>
                 <div style={{ flex: 1 }}>
                   <CustomSelect
                     options={categories.map(c => ({ value: c.id, label: c.name }))}
