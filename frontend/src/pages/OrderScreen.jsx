@@ -25,14 +25,16 @@ export default function OrderScreen() {
 
   const scrollToCategory = (catId) => {
     setActiveCategory(catId);
+    if (!menuContainerRef.current) return;
     if (catId === 'all') {
-      if (menuContainerRef.current) {
-        menuContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      menuContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       const el = document.getElementById(`category-sec-${catId}`);
       if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const containerTop = menuContainerRef.current.getBoundingClientRect().top;
+        const elementTop = el.getBoundingClientRect().top;
+        const targetScrollTop = elementTop - containerTop + menuContainerRef.current.scrollTop;
+        menuContainerRef.current.scrollTo({ top: targetScrollTop - 12, behavior: 'smooth' });
       }
     }
   };
@@ -119,9 +121,9 @@ export default function OrderScreen() {
             ))}
           </div>
           
-          {/* Menu items list (shows filtered category or all categories when All Items is selected) */}
+          {/* Single continuous scrollable menu list */}
           <div ref={menuContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {(activeCategory === 'all' ? menu : menu.filter(c => c.id === activeCategory)).map(cat => (
+            {menu.map(cat => (
               <div key={cat.id} id={`category-sec-${cat.id}`}>
                 <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', color: 'var(--text-main)', fontSize: '1.4rem' }}>
                   {cat.name}
