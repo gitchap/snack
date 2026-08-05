@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { SocketContext, AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import ItemCustomizerModal from '../components/ItemCustomizerModal';
@@ -9,19 +9,33 @@ export default function OrderScreen() {
   const navigate = useNavigate();
   
   const [menu, setMenu] = useState([]);
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('all');
   const [cart, setCart] = useState([]);
   const [customizingItem, setCustomizingItem] = useState(null);
   const [cashTendered, setCashTendered] = useState('');
+  const menuContainerRef = useRef(null);
   
   useEffect(() => {
     fetch('/api/menu')
       .then(res => res.json())
       .then(data => {
         setMenu(data);
-        if (data.length > 0) setActiveCategory(data[0].id);
       });
   }, []);
+
+  const scrollToCategory = (catId) => {
+    setActiveCategory(catId);
+    if (catId === 'all') {
+      if (menuContainerRef.current) {
+        menuContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else {
+      const el = document.getElementById(`category-sec-${catId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
 
   const handleItemClick = (item) => {
     if (item.options && item.options.length > 0) {
@@ -57,7 +71,6 @@ export default function OrderScreen() {
     setCart([]);
   };
 
-  const activeCategoryItems = menu.find(c => c.id === activeCategory)?.menuItems || [];
   const cartTotal = cart.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
 
   const formatSnapshot = (snapshot) => {
@@ -86,32 +99,50 @@ export default function OrderScreen() {
       </div>
       
       <div className="main-content order-grid">
-        <div className="glass glass-card" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="tabs">
+        <div className="glass glass-card" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+          {/* Category Navigation Tabs */}
+          <div className="tabs" style={{ marginBottom: '1rem', flexShrink: 0 }}>
+            <div 
+              className={`tab ${activeCategory === 'all' ? 'active' : ''}`}
+              onClick={() => scrollToCategory('all')}
+            >
+              All Items
+            </div>
             {menu.map(cat => (
               <div 
                 key={cat.id} 
                 className={`tab ${activeCategory === cat.id ? 'active' : ''}`}
-                onClick={() => setActiveCategory(cat.id)}
+                onClick={() => scrollToCategory(cat.id)}
               >
                 {cat.name}
               </div>
             ))}
           </div>
           
-          <div className="menu-grid">
-            {activeCategoryItems.map(item => (
-              <div key={item.id} className="glass glass-card menu-item" onClick={() => handleItemClick(item)}>
-                <h3>{item.name}</h3>
-                <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>${item.price.toFixed(2)}</span>
-                {item.options && item.options.length > 0 && (
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Customizable</span>
-                )}
+          {/* Single continuous scrollable menu list */}
+          <div ref={menuContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {menu.map(cat => (
+              <div key={cat.id} id={`category-sec-${cat.id}`}>
+                <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', color: 'var(--text-main)', fontSize: '1.4rem' }}>
+                  {cat.name}
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.25rem' }}>
+                  {(cat.menuItems || []).map(item => (
+                    <div key={item.id} className="glass glass-card menu-item" onClick={() => handleItemClick(item)}>
+                      <h3 style={{ fontSize: '1.2rem' }}>{item.name}</h3>
+                      <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.15rem' }}>${item.price.toFixed(2)}</span>
+                      {item.options && item.options.length > 0 && (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Customizable</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
+        {/* Cart Sidebar */}
         <div className="glass glass-card cart-sidebar">
           <h2>Current Order</h2>
           <div className="cart-items">
@@ -143,16 +174,22 @@ export default function OrderScreen() {
 
             <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Cash Tendered</label>
-              <input
-                type="number"
-                className="input"
-                placeholder="$0.00"
-                min="0"
-                step="0.01"
-                value={cashTendered}
-                onChange={e => setCashTendered(e.target.value)}
-                style={{ fontSize: '1.2rem', fontWeight: 'bold' }}
-              />
+              <div className="input" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0 0.85rem' }}>
+                <span style={{ color: 'var(--text-muted)', fontWeight: 'bold', fontSize: '1.2rem' }}>$</span>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                  value={cashTendered}
+                  onChange={e => setCashTendered(e.target.value)}
+                  onBlur={() => {
+                    const num = parseFloat(cashTendered);
+                    if (!isNaN(num)) setCashTendered(num.toFixed(2));
+                  }}
+                  style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold', padding: '0.75rem 0' }}
+                />
+              </div>
               {cashTendered !== '' && parseFloat(cashTendered) >= cartTotal && (
                 <div style={{
                   display: 'flex', justifyContent: 'space-between',
