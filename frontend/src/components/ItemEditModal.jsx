@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CustomSelect from './CustomSelect';
 
 export default function ItemEditModal({ item, categories, token, onClose, onSaved }) {
   const [name, setName] = useState(item.name);
@@ -88,11 +89,13 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
             <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Item Name" />
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <input type="number" step="0.01" className="input" value={price} onChange={e => setPrice(e.target.value)} placeholder="Price" style={{ flex: 1 }} />
-              <select className="input" value={categoryId} onChange={e => setCategoryId(e.target.value)} style={{ flex: 1 }}>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <div style={{ flex: 1 }}>
+                <CustomSelect
+                  options={categories.map(c => ({ value: c.id, label: c.name }))}
+                  value={categoryId}
+                  onChange={val => setCategoryId(val)}
+                />
+              </div>
             </div>
           </div>
 

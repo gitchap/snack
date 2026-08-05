@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import ItemEditModal from '../components/ItemEditModal';
+import CustomSelect from '../components/CustomSelect';
 
 // ─── Menu Item Card (clean view only, click opens modal) ────────────────────
 function MenuItemCard({ item, onClick }) {
@@ -157,9 +158,13 @@ export default function AdminScreen() {
               <input className="input" placeholder="Item Name" value={newItemName} onChange={e => setNewItemName(e.target.value)} required />
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input type="number" step="0.01" className="input" placeholder="Price" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} required style={{ flex: 1 }} />
-                <select className="input" value={newItemCategoryId} onChange={e => setNewItemCategoryId(e.target.value)} style={{ flex: 1 }}>
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <div style={{ flex: 1 }}>
+                  <CustomSelect
+                    options={categories.map(c => ({ value: c.id, label: c.name }))}
+                    value={newItemCategoryId}
+                    onChange={val => setNewItemCategoryId(val)}
+                  />
+                </div>
               </div>
 
               {pendingOptions.length > 0 && (
@@ -220,9 +225,11 @@ export default function AdminScreen() {
             <form onSubmit={handleChangePin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Select Account</label>
-                <select className="input" value={pinUserId} onChange={e => setPinUserId(e.target.value)}>
-                  {users.map(u => <option key={u.id} value={u.id}>{u.username} ({u.role})</option>)}
-                </select>
+                <CustomSelect
+                  options={users.map(u => ({ value: u.id, label: `${u.username} (${u.role})` }))}
+                  value={pinUserId}
+                  onChange={val => setPinUserId(val)}
+                />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>New PIN</label>
