@@ -15,13 +15,22 @@ export default function OrderScreen() {
   const [cashTendered, setCashTendered] = useState('');
   const menuContainerRef = useRef(null);
   
-  useEffect(() => {
+  const fetchMenu = () => {
     fetch('/api/menu')
       .then(res => res.json())
       .then(data => {
-        setMenu(data);
-      });
-  }, []);
+        if (Array.isArray(data)) setMenu(data);
+      })
+      .catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchMenu();
+    if (socket) {
+      socket.on('menu_updated', fetchMenu);
+      return () => socket.off('menu_updated', fetchMenu);
+    }
+  }, [socket]);
 
   const scrollToCategory = (catId) => {
     setActiveCategory(catId);

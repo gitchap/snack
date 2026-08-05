@@ -79,6 +79,7 @@ app.post('/api/admin/categories', authenticateToken, async (req, res) => {
     const { name } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Category name required' });
     const category = await prisma.category.create({ data: { name: name.trim() } });
+    io.emit('menu_updated');
     res.json(category);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -94,6 +95,7 @@ app.put('/api/admin/categories/:id', authenticateToken, async (req, res) => {
       where: { id: parseInt(req.params.id) },
       data: { name: name.trim() }
     });
+    io.emit('menu_updated');
     res.json(category);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -107,6 +109,7 @@ app.delete('/api/admin/categories/:id', authenticateToken, async (req, res) => {
     const count = await prisma.menuItem.count({ where: { categoryId: id } });
     if (count > 0) return res.status(400).json({ error: 'Cannot delete category containing items' });
     await prisma.category.delete({ where: { id } });
+    io.emit('menu_updated');
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -116,9 +119,14 @@ app.delete('/api/admin/categories/:id', authenticateToken, async (req, res) => {
 // Admin REST API for Menu Items & Options (Protected)
 app.post('/api/admin/menu', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, price, categoryId } = req.body;
-  const item = await prisma.menuItem.create({ data: { name, price, categoryId } });
-  res.json(item);
+  try {
+    const { name, price, categoryId } = req.body;
+    const item = await prisma.menuItem.create({ data: { name, price, categoryId } });
+    io.emit('menu_updated');
+    res.json(item);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.delete('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
@@ -128,6 +136,7 @@ app.delete('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
     // Delete associated item options first
     await prisma.itemOption.deleteMany({ where: { menuItemId: itemId } });
     await prisma.menuItem.delete({ where: { id: itemId } });
+    io.emit('menu_updated');
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -143,6 +152,7 @@ app.put('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
       data: { name, price: parseFloat(price), categoryId: parseInt(categoryId) },
       include: { options: true }
     });
+    io.emit('menu_updated');
     res.json(item);
   } catch (e) {
     console.error('Error updating menu item:', e);
@@ -162,6 +172,7 @@ app.post('/api/admin/menu/:itemId/options', authenticateToken, async (req, res) 
         defaultOn: defaultOn !== false
       }
     });
+    io.emit('menu_updated');
     res.json(option);
   } catch (e) {
     console.error('Error creating option:', e);
@@ -177,6 +188,7 @@ app.put('/api/admin/options/:optionId', authenticateToken, async (req, res) => {
       where: { id: parseInt(req.params.optionId) },
       data: { name, choices, defaultOn }
     });
+    io.emit('menu_updated');
     res.json(option);
   } catch (e) {
     console.error('Error updating option:', e);
@@ -190,6 +202,7 @@ app.delete('/api/admin/options/:optionId', authenticateToken, async (req, res) =
     await prisma.itemOption.delete({
       where: { id: parseInt(req.params.optionId) }
     });
+    io.emit('menu_updated');
     res.json({ success: true });
   } catch (e) {
     console.error('Error deleting option:', e);
