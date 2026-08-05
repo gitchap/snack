@@ -119,9 +119,9 @@ export default function OrderScreen() {
             ))}
           </div>
           
-          {/* Single continuous scrollable menu list */}
+          {/* Menu items list (shows filtered category or all categories when All Items is selected) */}
           <div ref={menuContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {menu.map(cat => (
+            {(activeCategory === 'all' ? menu : menu.filter(c => c.id === activeCategory)).map(cat => (
               <div key={cat.id} id={`category-sec-${cat.id}`}>
                 <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', color: 'var(--text-main)', fontSize: '1.4rem' }}>
                   {cat.name}
