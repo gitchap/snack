@@ -158,7 +158,7 @@ export default function AdminScreen() {
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input type="number" step="0.01" className="input" placeholder="Price" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} required style={{ flex: 1 }} />
                 <select className="input" value={newItemCategoryId} onChange={e => setNewItemCategoryId(e.target.value)} style={{ flex: 1 }}>
-                  {categories.map(c => <option key={c.id} value={c.id} style={{ color: '#000' }}>{c.name}</option>)}
+                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
 
@@ -221,7 +221,7 @@ export default function AdminScreen() {
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Select Account</label>
                 <select className="input" value={pinUserId} onChange={e => setPinUserId(e.target.value)}>
-                  {users.map(u => <option key={u.id} value={u.id} style={{ color: '#000' }}>{u.username} ({u.role})</option>)}
+                  {users.map(u => <option key={u.id} value={u.id}>{u.username} ({u.role})</option>)}
                 </select>
               </div>
               <div>

@@ -90,7 +90,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
               <input type="number" step="0.01" className="input" value={price} onChange={e => setPrice(e.target.value)} placeholder="Price" style={{ flex: 1 }} />
               <select className="input" value={categoryId} onChange={e => setCategoryId(e.target.value)} style={{ flex: 1 }}>
                 {categories.map(c => (
-                  <option key={c.id} value={c.id} style={{ color: '#000' }}>{c.name}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>

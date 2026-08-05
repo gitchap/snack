@@ -188,6 +188,25 @@ h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
   border-color: var(--primary);
 }
 
+select.input {
+  cursor: pointer;
+}
+select.input option {
+  background-color: #1e1b4b;
+  color: #f8fafc;
+  padding: 0.5rem;
+}
+
+/* Hide number input spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* Login Screen */
 .login-container {
   display: flex;
