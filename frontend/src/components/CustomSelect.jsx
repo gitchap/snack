@@ -17,7 +17,7 @@ export default function CustomSelect({ options = [], value, onChange, placeholde
   }, []);
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+    <div ref={containerRef} style={{ position: 'relative', width: '100%', flex: 1, minWidth: 0 }}>
       {/* Trigger Box */}
       <div
         className="input"
@@ -27,12 +27,16 @@ export default function CustomSelect({ options = [], value, onChange, placeholde
           alignItems: 'center',
           cursor: 'pointer',
           userSelect: 'none',
+          gap: '1rem',
+          width: '100%',
           borderColor: isOpen ? 'var(--primary)' : 'var(--glass-border)'
         }}
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span>{selectedOption ? selectedOption.label : placeholder}</span>
-        <span style={{ fontSize: '0.75rem', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', opacity: 0.8 }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <span style={{ fontSize: '0.75rem', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', opacity: 0.8, flexShrink: 0, marginLeft: 'auto' }}>
           ▼
         </span>
       </div>
