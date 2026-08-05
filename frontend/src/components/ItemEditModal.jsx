@@ -213,8 +213,8 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
 
           {/* Bottom Actions */}
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-            <button className="btn btn-success" style={{ flex: 2, padding: '0.85rem', fontSize: '1.05rem' }} onClick={handleSaveItem}>Save Changes</button>
             <button className="btn btn-danger" style={{ flex: 1, padding: '0.85rem' }} onClick={handleDeleteItem}>Delete Item</button>
+            <button className="btn btn-success" style={{ flex: 2, padding: '0.85rem', fontSize: '1.05rem' }} onClick={handleSaveItem}>Save Changes</button>
           </div>
         </div>
       </div>
