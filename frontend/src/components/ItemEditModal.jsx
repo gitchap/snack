@@ -5,6 +5,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
   const [name, setName] = useState(item.name);
   const [price, setPrice] = useState(item.price);
   const [categoryId, setCategoryId] = useState(item.categoryId);
+  const [options, setOptions] = useState(item.options || []);
 
   // New option state inside modal
   const [newOptName, setNewOptName] = useState('Ingredients');
@@ -18,35 +19,59 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
   const [editOptDefaultOn, setEditOptDefaultOn] = useState(true);
 
   const handleSaveItem = async () => {
-    await fetch(`/api/admin/menu/${item.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name, price: parseFloat(price), categoryId: parseInt(categoryId) })
-    });
-    onSaved();
-    onClose();
+    try {
+      const res = await fetch(`/api/admin/menu/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name, price: parseFloat(price), categoryId: parseInt(categoryId) })
+      });
+      if (res.ok) {
+        await onSaved();
+        onClose();
+      } else {
+        alert('Failed to save item changes.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error saving item: ' + e.message);
+    }
   };
 
   const handleDeleteItem = async () => {
     if (!window.confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
-    await fetch(`/api/admin/menu/${item.id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    onSaved();
-    onClose();
+    try {
+      const res = await fetch(`/api/admin/menu/${item.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        await onSaved();
+        onClose();
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error deleting item.');
+    }
   };
 
   const handleAddOption = async (e) => {
     e.preventDefault();
     if (!newOptChoices.trim()) return;
-    await fetch(`/api/admin/menu/${item.id}/options`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name: newOptName, choices: newOptChoices.trim(), defaultOn: newOptDefaultOn })
-    });
-    setNewOptChoices('');
-    onSaved();
+    try {
+      const res = await fetch(`/api/admin/menu/${item.id}/options`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name: newOptName, choices: newOptChoices.trim(), defaultOn: newOptDefaultOn })
+      });
+      if (res.ok) {
+        const createdOpt = await res.json();
+        setOptions(prev => [...prev, createdOpt]);
+        setNewOptChoices('');
+        onSaved();
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleStartEditOpt = (opt) => {
@@ -57,21 +82,36 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
   };
 
   const handleSaveOpt = async (optId) => {
-    await fetch(`/api/admin/options/${optId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name: editOptName, choices: editOptChoices.trim(), defaultOn: editOptDefaultOn })
-    });
-    setEditingOptId(null);
-    onSaved();
+    try {
+      const res = await fetch(`/api/admin/options/${optId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name: editOptName, choices: editOptChoices.trim(), defaultOn: editOptDefaultOn })
+      });
+      if (res.ok) {
+        const updatedOpt = await res.json();
+        setOptions(prev => prev.map(o => o.id === optId ? updatedOpt : o));
+        setEditingOptId(null);
+        onSaved();
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleDeleteOpt = async (optId) => {
-    await fetch(`/api/admin/options/${optId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    onSaved();
+    try {
+      const res = await fetch(`/api/admin/options/${optId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setOptions(prev => prev.filter(o => o.id !== optId));
+        onSaved();
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
@@ -79,7 +119,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
       <div className="glass glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '550px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <h2 style={{ margin: 0 }}>Edit {item.name}</h2>
-          <button className="btn btn-outline" style={{ minWidth: '6rem' }} onClick={onClose}>✕ Close</button>
+          <button className="btn btn-outline" style={{ minWidth: '6rem' }} onClick={onClose}>✕ Cancel</button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -104,9 +144,9 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
           {/* Option Groups List */}
           <div>
             <h4 style={{ margin: '0 0 0.75rem 0' }}>Option Groups</h4>
-            {item.options && item.options.length > 0 ? (
+            {options && options.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {item.options.map(opt => {
+                {options.map(opt => {
                   if (editingOptId === opt.id) {
                     return (
                       <div key={opt.id} style={{ background: 'rgba(0,0,0,0.25)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>

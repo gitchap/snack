@@ -95,45 +95,65 @@ app.delete('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
 
 app.put('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, price, categoryId } = req.body;
-  const item = await prisma.menuItem.update({
-    where: { id: parseInt(req.params.itemId) },
-    data: { name, price, categoryId: parseInt(categoryId) },
-    include: { options: true }
-  });
-  res.json(item);
+  try {
+    const { name, price, categoryId } = req.body;
+    const item = await prisma.menuItem.update({
+      where: { id: parseInt(req.params.itemId) },
+      data: { name, price: parseFloat(price), categoryId: parseInt(categoryId) },
+      include: { options: true }
+    });
+    res.json(item);
+  } catch (e) {
+    console.error('Error updating menu item:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/admin/menu/:itemId/options', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, choices, defaultOn } = req.body;
-  const option = await prisma.itemOption.create({
-    data: {
-      menuItemId: parseInt(req.params.itemId),
-      name,
-      choices,
-      defaultOn: defaultOn !== false // defaults to true unless explicitly false
-    }
-  });
-  res.json(option);
+  try {
+    const { name, choices, defaultOn } = req.body;
+    const option = await prisma.itemOption.create({
+      data: {
+        menuItemId: parseInt(req.params.itemId),
+        name,
+        choices,
+        defaultOn: defaultOn !== false
+      }
+    });
+    res.json(option);
+  } catch (e) {
+    console.error('Error creating option:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.put('/api/admin/options/:optionId', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { name, choices, defaultOn } = req.body;
-  const option = await prisma.itemOption.update({
-    where: { id: parseInt(req.params.optionId) },
-    data: { name, choices, defaultOn }
-  });
-  res.json(option);
+  try {
+    const { name, choices, defaultOn } = req.body;
+    const option = await prisma.itemOption.update({
+      where: { id: parseInt(req.params.optionId) },
+      data: { name, choices, defaultOn }
+    });
+    res.json(option);
+  } catch (e) {
+    console.error('Error updating option:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.delete('/api/admin/options/:optionId', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  await prisma.itemOption.delete({
-    where: { id: parseInt(req.params.optionId) }
-  });
-  res.json({ success: true });
+  try {
+    await prisma.itemOption.delete({
+      where: { id: parseInt(req.params.optionId) }
+    });
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error deleting option:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // Get Menu (Public/Kiosk accessible)

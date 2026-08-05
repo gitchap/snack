@@ -73,18 +73,15 @@ export default function AdminScreen() {
 
   useEffect(() => { fetchMenu(); fetchUsers(); }, []);
 
-  const fetchMenu = () => {
-    fetch('/api/menu').then(r => r.json()).then(data => {
+  const fetchMenu = async () => {
+    try {
+      const r = await fetch('/api/menu');
+      const data = await r.json();
       setCategories(data);
       if (data.length > 0 && !newItemCategoryId) setNewItemCategoryId(data[0].id);
-
-      // Keep editingItem updated if modal is open
-      if (editingItem) {
-        const allItems = data.flatMap(c => c.menuItems || []);
-        const updated = allItems.find(i => i.id === editingItem.id);
-        if (updated) setEditingItem(updated);
-      }
-    });
+    } catch (e) {
+      console.error('Error fetching menu:', e);
+    }
   };
 
   const fetchUsers = () => {
