@@ -27,9 +27,8 @@ export default function ItemCustomizerModal({ item, onClose, onConfirm }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="glass glass-card modal-content" onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <h2 style={{ margin: 0 }}>Customize {item.name}</h2>
-          <button className="btn btn-outline" style={{ minWidth: '7rem' }} onClick={onClose}>✕ Close</button>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.5rem', paddingRight: '0.5rem' }}>
@@ -64,7 +63,7 @@ export default function ItemCustomizerModal({ item, onClose, onConfirm }) {
 
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn btn-outline" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" style={{ flex: 2 }} onClick={() => onConfirm(selections)}>Add to Order</button>
+          <button className="btn btn-success" style={{ flex: 2 }} onClick={() => onConfirm(selections)}>Add to Order</button>
         </div>
       </div>
     </div>
