@@ -73,6 +73,51 @@ export default function AdminScreen() {
 
   useEffect(() => { fetchMenu(); fetchUsers(); }, []);
 
+  // Category management state
+  const [editingCatId, setEditingCatId] = useState(null);
+  const [editCatName, setEditCatName] = useState('');
+
+  const handleCreateCategory = async (name) => {
+    const res = await fetch('/api/admin/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name })
+    });
+    if (res.ok) {
+      const created = await res.json();
+      await fetchMenu();
+      setNewItemCategoryId(created.id);
+      return created;
+    }
+  };
+
+  const handleSaveCategoryName = async (catId) => {
+    if (!editCatName.trim()) return;
+    const res = await fetch(`/api/admin/categories/${catId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name: editCatName.trim() })
+    });
+    if (res.ok) {
+      setEditingCatId(null);
+      fetchMenu();
+    }
+  };
+
+  const handleDeleteCategory = async (catId) => {
+    if (!window.confirm('Delete this category?')) return;
+    const res = await fetch(`/api/admin/categories/${catId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      fetchMenu();
+    } else {
+      const err = await res.json();
+      alert(err.error || 'Failed to delete category');
+    }
+  };
+
   const fetchMenu = async () => {
     try {
       const r = await fetch('/api/menu');
@@ -160,6 +205,7 @@ export default function AdminScreen() {
                     options={categories.map(c => ({ value: c.id, label: c.name }))}
                     value={newItemCategoryId}
                     onChange={val => setNewItemCategoryId(val)}
+                    onAddNew={handleCreateCategory}
                   />
                 </div>
               </div>
@@ -196,7 +242,35 @@ export default function AdminScreen() {
           <div style={{ flex: 1, maxHeight: 'calc(100vh - 130px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {categories.map(cat => (
               <div key={cat.id} className="glass glass-card">
-                <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{cat.name}</h3>
+                {editingCatId === cat.id ? (
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem', alignItems: 'center' }}>
+                    <input className="input" value={editCatName} onChange={e => setEditCatName(e.target.value)} placeholder="Category Name" style={{ flex: 1 }} />
+                    <button className="btn btn-success" onClick={() => handleSaveCategoryName(cat.id)}>Save</button>
+                    <button className="btn btn-outline" onClick={() => setEditingCatId(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+                    <h3 style={{ margin: 0 }}>{cat.name}</h3>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        className="btn btn-outline"
+                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
+                        onClick={() => { setEditingCatId(cat.id); setEditCatName(cat.name); }}
+                      >
+                        Rename
+                      </button>
+                      {(!cat.menuItems || cat.menuItems.length === 0) && (
+                        <button
+                          className="btn btn-danger"
+                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
+                          onClick={() => handleDeleteCategory(cat.id)}
+                        >
+                          Delete Category
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                   {(cat.menuItems || []).map(item => (
                     <MenuItemCard

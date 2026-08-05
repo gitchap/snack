@@ -72,6 +72,47 @@ app.put('/api/admin/users/:id/pin', authenticateToken, async (req, res) => {
   res.json({ success: true });
 });
 
+// Admin REST API for Categories (Protected)
+app.post('/api/admin/categories', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Category name required' });
+    const category = await prisma.category.create({ data: { name: name.trim() } });
+    res.json(category);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put('/api/admin/categories/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Category name required' });
+    const category = await prisma.category.update({
+      where: { id: parseInt(req.params.id) },
+      data: { name: name.trim() }
+    });
+    res.json(category);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/admin/categories/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  try {
+    const id = parseInt(req.params.id);
+    const count = await prisma.menuItem.count({ where: { categoryId: id } });
+    if (count > 0) return res.status(400).json({ error: 'Cannot delete category containing items' });
+    await prisma.category.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Admin REST API for Menu Items & Options (Protected)
 app.post('/api/admin/menu', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);

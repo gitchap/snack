@@ -114,6 +114,19 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
     }
   };
 
+  const handleCreateCategory = async (catName) => {
+    const res = await fetch('/api/admin/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name: catName })
+    });
+    if (res.ok) {
+      const created = await res.json();
+      await onSaved();
+      setCategoryId(created.id);
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="glass glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '550px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -134,6 +147,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
                   options={categories.map(c => ({ value: c.id, label: c.name }))}
                   value={categoryId}
                   onChange={val => setCategoryId(val)}
+                  onAddNew={handleCreateCategory}
                 />
               </div>
             </div>
