@@ -173,8 +173,8 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }} onClick={() => handleStartEditOpt(opt)}>Edit</button>
-                        <button className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }} onClick={() => handleDeleteOpt(opt.id)}>Delete</button>
+                        <button className="btn btn-outline" onClick={() => handleStartEditOpt(opt)}>Edit</button>
+                        <button className="btn btn-danger" onClick={() => handleDeleteOpt(opt.id)}>Delete</button>
                       </div>
                     </div>
                   );
