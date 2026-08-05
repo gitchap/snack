@@ -1,0 +1,166 @@
+import React, { useState } from 'react';
+
+export default function ItemEditModal({ item, categories, token, onClose, onSaved }) {
+  const [name, setName] = useState(item.name);
+  const [price, setPrice] = useState(item.price);
+  const [categoryId, setCategoryId] = useState(item.categoryId);
+
+  // New option state inside modal
+  const [newOptName, setNewOptName] = useState('Ingredients');
+  const [newOptChoices, setNewOptChoices] = useState('');
+  const [newOptDefaultOn, setNewOptDefaultOn] = useState(true);
+
+  // Option edit state
+  const [editingOptId, setEditingOptId] = useState(null);
+  const [editOptName, setEditOptName] = useState('');
+  const [editOptChoices, setEditOptChoices] = useState('');
+  const [editOptDefaultOn, setEditOptDefaultOn] = useState(true);
+
+  const handleSaveItem = async () => {
+    await fetch(`/api/admin/menu/${item.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name, price: parseFloat(price), categoryId: parseInt(categoryId) })
+    });
+    onSaved();
+    onClose();
+  };
+
+  const handleDeleteItem = async () => {
+    if (!window.confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
+    await fetch(`/api/admin/menu/${item.id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    onSaved();
+    onClose();
+  };
+
+  const handleAddOption = async (e) => {
+    e.preventDefault();
+    if (!newOptChoices.trim()) return;
+    await fetch(`/api/admin/menu/${item.id}/options`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name: newOptName, choices: newOptChoices.trim(), defaultOn: newOptDefaultOn })
+    });
+    setNewOptChoices('');
+    onSaved();
+  };
+
+  const handleStartEditOpt = (opt) => {
+    setEditingOptId(opt.id);
+    setEditOptName(opt.name);
+    setEditOptChoices(opt.choices);
+    setEditOptDefaultOn(opt.defaultOn !== false);
+  };
+
+  const handleSaveOpt = async (optId) => {
+    await fetch(`/api/admin/options/${optId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name: editOptName, choices: editOptChoices.trim(), defaultOn: editOptDefaultOn })
+    });
+    setEditingOptId(null);
+    onSaved();
+  };
+
+  const handleDeleteOpt = async (optId) => {
+    await fetch(`/api/admin/options/${optId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    onSaved();
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="glass glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '550px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+          <h2 style={{ margin: 0 }}>Edit {item.name}</h2>
+          <button className="btn btn-outline" style={{ minWidth: '6rem' }} onClick={onClose}>✕ Close</button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Item Basic Details */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <label style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Item Details</label>
+            <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Item Name" />
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <input type="number" step="0.01" className="input" value={price} onChange={e => setPrice(e.target.value)} placeholder="Price" style={{ flex: 1 }} />
+              <select className="input" value={categoryId} onChange={e => setCategoryId(e.target.value)} style={{ flex: 1 }}>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id} style={{ color: '#000' }}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0.5rem 0' }} />
+
+          {/* Option Groups List */}
+          <div>
+            <h4 style={{ margin: '0 0 0.75rem 0' }}>Option Groups</h4>
+            {item.options && item.options.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {item.options.map(opt => {
+                  if (editingOptId === opt.id) {
+                    return (
+                      <div key={opt.id} style={{ background: 'rgba(0,0,0,0.25)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        <input className="input" value={editOptName} onChange={e => setEditOptName(e.target.value)} placeholder="Group Name" />
+                        <input className="input" value={editOptChoices} onChange={e => setEditOptChoices(e.target.value)} placeholder="Comma-separated choices" />
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>
+                          <input type="checkbox" checked={editOptDefaultOn} onChange={e => setEditOptDefaultOn(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                          Default ON (pre-selected when ordering)
+                        </label>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button className="btn btn-success" style={{ flex: 1 }} onClick={() => handleSaveOpt(opt.id)}>Save Group</button>
+                          <button className="btn btn-outline" onClick={() => setEditingOptId(null)}>Cancel</button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={opt.id} style={{ background: 'rgba(255,255,255,0.04)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong>{opt.name}:</strong> <span style={{ color: 'var(--text-muted)' }}>{opt.choices}</span>
+                        <div style={{ fontSize: '0.85rem', color: opt.defaultOn !== false ? 'var(--success)' : 'var(--warning)', marginTop: '0.2rem' }}>
+                          {opt.defaultOn !== false ? '● Default ON' : '○ Default OFF'}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }} onClick={() => handleStartEditOpt(opt)}>Edit</button>
+                        <button className="btn btn-danger" style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }} onClick={() => handleDeleteOpt(opt.id)}>Delete</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', margin: '0 0 0.5rem 0' }}>No option groups yet.</p>
+            )}
+          </div>
+
+          {/* Add New Option Group Form inside Modal */}
+          <form onSubmit={handleAddOption} style={{ background: 'rgba(139,92,246,0.08)', border: '1px dashed rgba(139,92,246,0.3)', borderRadius: 'var(--radius-sm)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <h4 style={{ margin: 0, color: 'var(--primary)' }}>+ Add New Option Group</h4>
+            <input className="input" placeholder="Group Name (e.g. Ingredients)" value={newOptName} onChange={e => setNewOptName(e.target.value)} />
+            <input className="input" placeholder="Choices (comma-separated: Lettuce, Tomato, Mayo)" value={newOptChoices} onChange={e => setNewOptChoices(e.target.value)} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>
+              <input type="checkbox" checked={newOptDefaultOn} onChange={e => setNewOptDefaultOn(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+              Default ON (pre-selected when ordering)
+            </label>
+            <button type="submit" className="btn btn-outline">Add Option Group</button>
+          </form>
+
+          {/* Bottom Actions */}
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <button className="btn btn-success" style={{ flex: 2, padding: '0.85rem', fontSize: '1.05rem' }} onClick={handleSaveItem}>Save Changes</button>
+            <button className="btn btn-danger" style={{ flex: 1, padding: '0.85rem' }} onClick={handleDeleteItem}>Delete Item</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

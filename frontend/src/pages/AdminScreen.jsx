@@ -1,220 +1,45 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
+import ItemEditModal from '../components/ItemEditModal';
 
-// ─── Option Group Row (in edit mode for existing items) ──────────────────────
-function OptionGroupRow({ opt, token, onSaved }) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(opt.name);
-  const [choices, setChoices] = useState(opt.choices);
-  const [defaultOn, setDefaultOn] = useState(opt.defaultOn !== false);
-
-  const save = async () => {
-    await fetch(`/api/admin/options/${opt.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name, choices, defaultOn })
-    });
-    setEditing(false);
-    onSaved();
-  };
-
-  const del = async () => {
-    await fetch(`/api/admin/options/${opt.id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    onSaved();
-  };
-
-  if (editing) {
-    return (
-      <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-        <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Group name" />
-        <input className="input" value={choices} onChange={e => setChoices(e.target.value)} placeholder="Comma-separated choices" />
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
-          <input type="checkbox" style={{ width: '16px', height: '16px' }} checked={defaultOn} onChange={e => setDefaultOn(e.target.checked)} />
-          Default ON (pre-selected when ordering)
-        </label>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-success" style={{ flex: 1 }} onClick={save}>Save</button>
-          <button className="btn btn-outline" onClick={() => setEditing(false)}>Cancel</button>
-          <button className="btn btn-danger" onClick={del}>Delete</button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      onClick={() => setEditing(true)}
-      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}
-    >
-      <span><strong style={{ color: 'var(--text-main)' }}>{opt.name}:</strong> {opt.choices}</span>
-      <span style={{ marginLeft: '0.75rem', fontWeight: '600', flexShrink: 0, color: opt.defaultOn !== false ? 'var(--success)' : 'var(--warning)' }}>
-        {opt.defaultOn !== false ? 'Default ON' : 'Default OFF'}
-      </span>
-    </div>
-  );
-}
-
-// ─── New Option Group Form (inside edit card) ────────────────────────────────
-function NewOptionForm({ itemId, token, onAdded }) {
-  const [name, setName] = useState('Ingredients');
-  const [choices, setChoices] = useState('');
-  const [defaultOn, setDefaultOn] = useState(true);
-
-  const add = async (e) => {
-    e.preventDefault();
-    if (!choices.trim()) return;
-    await fetch(`/api/admin/menu/${itemId}/options`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name, choices: choices.trim(), defaultOn })
-    });
-    setChoices('');
-    onAdded();
-  };
-
-  return (
-    <form onSubmit={add} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(139,92,246,0.08)', border: '1px dashed rgba(139,92,246,0.3)', borderRadius: 'var(--radius-sm)', padding: '1rem' }}>
-      <p style={{ margin: 0, color: 'var(--primary)', fontWeight: '600' }}>+ Add Option Group</p>
-      <input className="input" placeholder="Group name (e.g. Ingredients)" value={name} onChange={e => setName(e.target.value)} />
-      <input className="input" placeholder="Choices: Lettuce, Tomato, Mayo, Pickles" value={choices} onChange={e => setChoices(e.target.value)} />
-      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
-        <input type="checkbox" style={{ width: '16px', height: '16px' }} checked={defaultOn} onChange={e => setDefaultOn(e.target.checked)} />
-        Default ON — all choices pre-selected (uncheck for optional add-ons)
-      </label>
-      <button type="submit" className="btn btn-primary">Add Group</button>
-    </form>
-  );
-}
-
-// ─── Menu Item Card ───────────────────────────────────────────────────────────
-function MenuItemCard({ item, categories, token, onSaved }) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(item.name);
-  const [price, setPrice] = useState(item.price);
-  const [categoryId, setCategoryId] = useState(item.categoryId);
-  const [editingOptionId, setEditingOptionId] = useState(null);
-  const [editOptName, setEditOptName] = useState('');
-  const [editOptChoices, setEditOptChoices] = useState('');
-  const [editOptDefaultOn, setEditOptDefaultOn] = useState(true);
-
-  const saveItem = async () => {
-    await fetch(`/api/admin/menu/${item.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name, price: parseFloat(price), categoryId })
-    });
-    setEditing(false);
-    onSaved();
-  };
-
-  const deleteItem = async () => {
-    if (!window.confirm(`Delete "${name}"?`)) return;
-    await fetch(`/api/admin/menu/${item.id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    onSaved();
-  };
-
-  const startEditOption = (opt) => {
-    setEditingOptionId(opt.id);
-    setEditOptName(opt.name);
-    setEditOptChoices(opt.choices);
-    setEditOptDefaultOn(opt.defaultOn !== false);
-    setEditing(true); // open edit mode so the form is visible
-  };
-
-  const saveOption = async () => {
-    await fetch(`/api/admin/options/${editingOptionId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name: editOptName, choices: editOptChoices.trim(), defaultOn: editOptDefaultOn })
-    });
-    setEditingOptionId(null);
-    onSaved();
-  };
-
-  const deleteOption = async (optId) => {
-    await fetch(`/api/admin/options/${optId}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    onSaved();
-  };
-
+// ─── Menu Item Card (clean view only, click opens modal) ────────────────────
+function MenuItemCard({ item, onClick }) {
   return (
     <div
       className="glass"
-      style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', cursor: editing ? 'default' : 'pointer' }}
-      onClick={() => !editing && setEditing(true)}
+      style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', cursor: 'pointer' }}
+      onClick={onClick}
     >
-      {!editing ? (
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <strong style={{ fontSize: '1.2rem', color: '#fff' }}>{item.name}</strong>
+        <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.15rem' }}>${item.price.toFixed(2)}</span>
+      </div>
+
+      {item.options?.length > 0 && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <strong style={{ fontSize: '1.15rem' }}>{item.name}</strong>
-            <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.1rem' }}>${item.price.toFixed(2)}</span>
-          </div>
-          {item.options?.length > 0 && (
-            <>
-              <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0' }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {item.options.map(o => (
-                  <div key={o.id}>
-                    {/* Group name on its own line */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>
-                        <span style={{ color: o.defaultOn !== false ? '#6ee7b7' : '#fbbf24' }}>● </span>
-                        <strong style={{ color: 'var(--text-main)' }}>{o.name}:</strong>
-                      </span>
-                      <span style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, marginLeft: '0.5rem' }}>
-                        <button style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline', padding: 0 }} onClick={e => { e.stopPropagation(); startEditOption(o); }}>edit</button>
-                        <button style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline', padding: 0 }} onClick={e => { e.stopPropagation(); deleteOption(o.id); }}>delete</button>
-                      </span>
-                    </div>
-                    {/* Choices on the next line, indented */}
-                    <div style={{ paddingLeft: '1.25rem', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.5 }}>
-                      {o.choices}
-                    </div>
-                  </div>
-                ))}
+          <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {item.options.map(o => (
+              <div key={o.id}>
+                {/* Header on its own line */}
+                <div>
+                  <span style={{ color: o.defaultOn !== false ? '#6ee7b7' : '#fbbf24' }}>● </span>
+                  <strong style={{ color: 'var(--text-main)', fontSize: '1.05rem' }}>{o.name}:</strong>
+                </div>
+                {/* Choices indented below with clean word wrap */}
+                <div style={{ paddingLeft: '1.25rem', color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5', wordBreak: 'break-word' }}>
+                  {o.choices}
+                </div>
               </div>
-            </>
-          )}
-          <span style={{ color: 'var(--primary)', opacity: 0.8, fontSize: '0.9rem' }}>Click to edit</span>
-        </>
-
-      ) : (
-        <>
-          <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Item name" />
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input type="number" step="0.01" className="input" value={price} onChange={e => setPrice(e.target.value)} style={{ flex: 1 }} />
-            <select className="input" value={categoryId} onChange={e => setCategoryId(parseInt(e.target.value))} style={{ flex: 1 }}>
-              {categories.map(c => <option key={c.id} value={c.id} style={{ color: '#000' }}>{c.name}</option>)}
-            </select>
-          </div>
-
-          {item.options?.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <p style={{ margin: 0, fontWeight: '600', color: 'var(--text-muted)' }}>Option Groups (click to edit):</p>
-              {item.options.map(opt => (
-                <OptionGroupRow key={opt.id} opt={opt} token={token} onSaved={onSaved} />
-              ))}
-            </div>
-          )}
-
-          <NewOptionForm itemId={item.id} token={token} onAdded={onSaved} />
-
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button className="btn btn-success" style={{ flex: 2 }} onClick={saveItem}>Save Changes</button>
-            <button className="btn btn-outline" style={{ flex: 1 }} onClick={e => { e.stopPropagation(); setEditing(false); }}>Cancel</button>
-            <button className="btn btn-danger" style={{ flex: 1 }} onClick={e => { e.stopPropagation(); deleteItem(); }}>Delete</button>
+            ))}
           </div>
         </>
       )}
+
+      <div style={{ marginTop: '0.25rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <span style={{ color: 'var(--primary)', fontSize: '0.9rem', opacity: 0.9 }}>Click to edit</span>
+      </div>
     </div>
   );
 }
@@ -228,7 +53,7 @@ export default function AdminScreen() {
   const [categories, setCategories] = useState([]);
   const [users, setUsers] = useState([]);
 
-  // Add Item form
+  // Add Item form state
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemCategoryId, setNewItemCategoryId] = useState('');
@@ -238,7 +63,10 @@ export default function AdminScreen() {
   const [newOptDefaultOn, setNewOptDefaultOn] = useState(true);
   const [createdItemId, setCreatedItemId] = useState(null);
 
-  // User PIN form
+  // Currently editing item (modal state)
+  const [editingItem, setEditingItem] = useState(null);
+
+  // User PIN form state
   const [pinUserId, setPinUserId] = useState('');
   const [newPin, setNewPin] = useState('');
   const [pinMessage, setPinMessage] = useState('');
@@ -249,6 +77,13 @@ export default function AdminScreen() {
     fetch('/api/menu').then(r => r.json()).then(data => {
       setCategories(data);
       if (data.length > 0 && !newItemCategoryId) setNewItemCategoryId(data[0].id);
+
+      // Keep editingItem updated if modal is open
+      if (editingItem) {
+        const allItems = data.flatMap(c => c.menuItems || []);
+        const updated = allItems.find(i => i.id === editingItem.id);
+        if (updated) setEditingItem(updated);
+      }
     });
   };
 
@@ -316,7 +151,7 @@ export default function AdminScreen() {
       {activeTab === 'menu' && (
         <div className="main-content" style={{ display: 'flex', gap: '1.5rem', padding: '0.5rem', alignItems: 'flex-start', overflowY: 'auto' }}>
 
-          {/* Left: Single "Add New Item" card with inline option group builder */}
+          {/* Left: Add New Item card */}
           <div className="glass glass-card" style={{ flex: '0 0 340px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <h3>Add New Item</h3>
             <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -328,7 +163,6 @@ export default function AdminScreen() {
                 </select>
               </div>
 
-              {/* Queued option groups */}
               {pendingOptions.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   {pendingOptions.map((o, i) => (
@@ -341,7 +175,6 @@ export default function AdminScreen() {
                 </div>
               )}
 
-              {/* Inline option group section — no fontSize overrides, inherits full size */}
               <div style={{ background: 'rgba(139,92,246,0.08)', border: '1px dashed rgba(139,92,246,0.3)', borderRadius: 'var(--radius-sm)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <p style={{ margin: 0, color: 'var(--primary)', fontWeight: '600' }}>+ Option Group (optional)</p>
                 <input className="input" placeholder="Group name" value={newOptName} onChange={e => setNewOptName(e.target.value)} />
@@ -358,19 +191,17 @@ export default function AdminScreen() {
             </form>
           </div>
 
-          {/* Right: Menu overview — items clickable to edit inline */}
+          {/* Right: Menu overview */}
           <div style={{ flex: 1, maxHeight: 'calc(100vh - 130px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {categories.map(cat => (
               <div key={cat.id} className="glass glass-card">
                 <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>{cat.name}</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                   {(cat.menuItems || []).map(item => (
                     <MenuItemCard
                       key={item.id}
                       item={{ ...item, categoryId: cat.id }}
-                      categories={categories}
-                      token={token}
-                      onSaved={fetchMenu}
+                      onClick={() => setEditingItem({ ...item, categoryId: cat.id })}
                     />
                   ))}
                 </div>
@@ -381,6 +212,7 @@ export default function AdminScreen() {
         </div>
       )}
 
+      {/* User PINs Tab */}
       {activeTab === 'users' && (
         <div className="main-content" style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
           <div className="glass glass-card" style={{ width: '100%', maxWidth: '500px' }}>
@@ -401,6 +233,17 @@ export default function AdminScreen() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingItem && (
+        <ItemEditModal
+          item={editingItem}
+          categories={categories}
+          token={token}
+          onClose={() => setEditingItem(null)}
+          onSaved={fetchMenu}
+        />
       )}
     </>
   );
