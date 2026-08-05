@@ -96,6 +96,10 @@ function MenuItemCard({ item, categories, token, onSaved }) {
   const [name, setName] = useState(item.name);
   const [price, setPrice] = useState(item.price);
   const [categoryId, setCategoryId] = useState(item.categoryId);
+  const [editingOptionId, setEditingOptionId] = useState(null);
+  const [editOptName, setEditOptName] = useState('');
+  const [editOptChoices, setEditOptChoices] = useState('');
+  const [editOptDefaultOn, setEditOptDefaultOn] = useState(true);
 
   const saveItem = async () => {
     await fetch(`/api/admin/menu/${item.id}`, {
@@ -116,6 +120,32 @@ function MenuItemCard({ item, categories, token, onSaved }) {
     onSaved();
   };
 
+  const startEditOption = (opt) => {
+    setEditingOptionId(opt.id);
+    setEditOptName(opt.name);
+    setEditOptChoices(opt.choices);
+    setEditOptDefaultOn(opt.defaultOn !== false);
+    setEditing(true); // open edit mode so the form is visible
+  };
+
+  const saveOption = async () => {
+    await fetch(`/api/admin/options/${editingOptionId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ name: editOptName, choices: editOptChoices.trim(), defaultOn: editOptDefaultOn })
+    });
+    setEditingOptionId(null);
+    onSaved();
+  };
+
+  const deleteOption = async (optId) => {
+    await fetch(`/api/admin/options/${optId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    onSaved();
+  };
+
   return (
     <div
       className="glass"
@@ -129,17 +159,34 @@ function MenuItemCard({ item, categories, token, onSaved }) {
             <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.1rem' }}>${item.price.toFixed(2)}</span>
           </div>
           {item.options?.length > 0 && (
-            <div style={{ color: 'var(--text-muted)', lineHeight: 1.7 }}>
-              {item.options.map(o => (
-                <div key={o.id}>
-                  <span style={{ color: o.defaultOn !== false ? '#6ee7b7' : '#fbbf24' }}>● </span>
-                  <strong style={{ color: 'var(--text-main)' }}>{o.name}:</strong> {o.choices}
-                </div>
-              ))}
-            </div>
+            <>
+              <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {item.options.map(o => (
+                  <div key={o.id}>
+                    {/* Group name on its own line */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>
+                        <span style={{ color: o.defaultOn !== false ? '#6ee7b7' : '#fbbf24' }}>● </span>
+                        <strong style={{ color: 'var(--text-main)' }}>{o.name}:</strong>
+                      </span>
+                      <span style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, marginLeft: '0.5rem' }}>
+                        <button style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline', padding: 0 }} onClick={e => { e.stopPropagation(); startEditOption(o); }}>edit</button>
+                        <button style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.85rem', textDecoration: 'underline', padding: 0 }} onClick={e => { e.stopPropagation(); deleteOption(o.id); }}>delete</button>
+                      </span>
+                    </div>
+                    {/* Choices on the next line, indented */}
+                    <div style={{ paddingLeft: '1.25rem', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                      {o.choices}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
-          <span style={{ color: 'var(--primary)', opacity: 0.8 }}>Click to edit</span>
+          <span style={{ color: 'var(--primary)', opacity: 0.8, fontSize: '0.9rem' }}>Click to edit</span>
         </>
+
       ) : (
         <>
           <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Item name" />
