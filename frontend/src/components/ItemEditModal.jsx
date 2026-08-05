@@ -222,7 +222,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
               <input type="checkbox" checked={newOptDefaultOn} onChange={e => setNewOptDefaultOn(e.target.checked)} style={{ width: '16px', height: '16px' }} />
               Default ON (pre-selected when ordering)
             </label>
-            <button type="submit" className="btn btn-outline">Add Option Group</button>
+            <button type="submit" className="btn btn-outline">Save Group</button>
           </form>
 
           {/* Bottom Actions */}

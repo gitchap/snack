@@ -245,7 +245,7 @@ export default function AdminScreen() {
                   <input type="checkbox" style={{ width: '16px', height: '16px' }} checked={newOptDefaultOn} onChange={e => setNewOptDefaultOn(e.target.checked)} />
                   Default ON (pre-selected when ordering)
                 </label>
-                <button type="button" className="btn btn-outline" onClick={addPendingOption}>Add Group</button>
+                <button type="button" className="btn btn-outline" onClick={addPendingOption}>Save Group</button>
               </div>
 
               <button type="submit" className="btn btn-primary" style={{ padding: '0.85rem' }}>Create Item</button>
