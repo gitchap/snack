@@ -148,7 +148,7 @@ export default function AdminScreen() {
       </div>
 
       {activeTab === 'menu' && (
-        <div className="main-content" style={{ display: 'flex', gap: '1.5rem', padding: '0.5rem', alignItems: 'flex-start', overflowY: 'auto' }}>
+        <div className="main-content" style={{ display: 'flex', gap: '1.5rem', padding: '0.75rem', alignItems: 'flex-start', overflowY: 'auto' }}>
 
           {/* Left: Add New Item card */}
           <div className="glass glass-card" style={{ flex: '0 0 340px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
