@@ -24,11 +24,10 @@ function MenuItemCard({ item, onClick }) {
               <div key={o.id}>
                 {/* Header on its own line */}
                 <div>
-                  <span style={{ color: o.defaultOn !== false ? '#6ee7b7' : '#fbbf24' }}>● </span>
                   <strong style={{ color: 'var(--text-main)', fontSize: '1.05rem' }}>{o.name}:</strong>
                 </div>
                 {/* Choices indented below with clean word wrap */}
-                <div style={{ paddingLeft: '1.25rem', color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5', wordBreak: 'break-word' }}>
+                <div style={{ paddingLeft: '0.5rem', color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5', wordBreak: 'break-word' }}>
                   {o.choices}
                 </div>
               </div>
