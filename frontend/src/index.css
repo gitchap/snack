@@ -156,10 +156,19 @@ h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
 }
 
 .kitchen-grid, .service-grid {
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  overflow-y: auto;
-  align-items: start;
+  display: block;
+  column-width: 320px;
+  column-gap: 1.25rem;
+  height: calc(100vh - 110px);
+  overflow-x: auto;
+  overflow-y: hidden;
   padding: 0.75rem;
+}
+
+.kitchen-grid .ticket, .service-grid .ticket {
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 1.25rem;
 }
 
 /* Scrollbar */
