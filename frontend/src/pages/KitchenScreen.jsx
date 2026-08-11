@@ -132,7 +132,7 @@ export default function KitchenScreen() {
                       {order.customerName || formatTicketCode(order.orderNumber)}
                     </h3>
                     {order.priority && (
-                      <span className="badge" style={{ background: 'var(--warning)', color: '#000', padding: '0.25rem 0.4rem' }}>🔥</span>
+                      <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔥</span>
                     )}
                   </div>
                   {/* Ticket code below the name */}
