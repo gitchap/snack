@@ -9,6 +9,7 @@ export default function KitchenScreen() {
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [confirmUndoOrder, setConfirmUndoOrder] = useState(null);
 
   useEffect(() => {
     fetch('/api/orders/active')
@@ -105,7 +106,14 @@ export default function KitchenScreen() {
               {order.kitchenStatus === 'pending' ? (
                 <span className="badge badge-pending">Cooking</span>
               ) : (
-                <span className="badge badge-ready">Food Ready</span>
+                <span 
+                  className="badge badge-ready" 
+                  style={{ cursor: 'pointer', userSelect: 'none' }} 
+                  title="Tap to Undo Food Ready"
+                  onClick={() => setConfirmUndoOrder(order)}
+                >
+                  Food Ready ↩
+                </span>
               )}
             </div>
             
@@ -142,7 +150,7 @@ export default function KitchenScreen() {
               })}
             </div>
             
-            {order.kitchenStatus === 'pending' ? (
+            {order.kitchenStatus === 'pending' && (
               <button 
                 className="btn btn-success" 
                 style={{ marginTop: '1rem', width: '100%' }}
@@ -150,19 +158,37 @@ export default function KitchenScreen() {
               >
                 Food Ready
               </button>
-            ) : (
-              <button 
-                className="btn btn-outline" 
-                style={{ marginTop: '1rem', width: '100%', borderColor: 'var(--warning)', color: 'var(--warning)' }}
-                onClick={() => markPending(order.id)}
-              >
-                ↩ Undo "Food Ready"
-              </button>
             )}
           </div>
         ))}
         {orders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No active orders</p>}
       </div>
+
+      {confirmUndoOrder && (
+        <div className="modal-overlay" onClick={() => setConfirmUndoOrder(null)}>
+          <div className="glass glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px', textAlign: 'center', padding: '2rem' }}>
+            <h3 style={{ marginBottom: '1rem', color: 'var(--warning)', fontSize: '1.5rem' }}>Undo "Food Ready"?</h3>
+            <p style={{ color: 'var(--text-main)', marginBottom: '1.5rem', lineHeight: '1.5', fontSize: '1.1rem' }}>
+              Revert <strong>{confirmUndoOrder.customerName || `Order #${confirmUndoOrder.orderNumber}`}</strong> back to <strong>Cooking</strong> status?
+            </p>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => setConfirmUndoOrder(null)}>
+                Cancel
+              </button>
+              <button 
+                className="btn btn-danger" 
+                style={{ flex: 1 }} 
+                onClick={() => {
+                  markPending(confirmUndoOrder.id);
+                  setConfirmUndoOrder(null);
+                }}
+              >
+                Yes, Undo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
