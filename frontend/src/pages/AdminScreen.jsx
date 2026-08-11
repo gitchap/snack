@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ItemEditModal from '../components/ItemEditModal';
 import CustomSelect from '../components/CustomSelect';
 import useFavicon from '../hooks/useFavicon';
+import { formatTicketCode } from '../utils/formatTicket';
 
 // ─── Menu Item Card (clean view only, click opens modal) ────────────────────
 function MenuItemCard({ item, onClick }) {
@@ -329,10 +330,10 @@ export default function AdminScreen() {
                 <div className="ticket-header">
                   <div>
                     <h3 style={{ margin: 0, fontSize: '1.25rem' }}>
-                      {order.customerName || `Order #${order.orderNumber}`}
+                      {order.customerName || formatTicketCode(order.orderNumber)}
                     </h3>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                      {new Date(order.createdAt).toLocaleString()}
+                      {order.customerName ? `${formatTicketCode(order.orderNumber)} • ` : ''}{new Date(order.createdAt).toLocaleString()}
                     </div>
                   </div>
                   <span className="badge" style={{ background: order.status === 'completed' ? 'var(--success)' : 'var(--danger)', color: '#fff' }}>

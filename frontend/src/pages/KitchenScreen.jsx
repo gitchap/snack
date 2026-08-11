@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { SocketContext, AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import useFavicon from '../hooks/useFavicon';
+import { formatTicketCode } from '../utils/formatTicket';
 
 export default function KitchenScreen() {
   useFavicon('kitchen.png', 'Kitchen Display - Snack Shack');
@@ -85,12 +86,7 @@ export default function KitchenScreen() {
   return (
     <>
       <div className="topbar glass">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <h2>Kitchen Display</h2>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)' }}>
-            ↓ Top to Bottom • Left to Right →
-          </span>
-        </div>
+        <h2>Kitchen Display</h2>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn btn-outline" onClick={() => navigate('/order')}>Back to Order</button>
           <button className="btn btn-outline" onClick={logout}>Logout</button>
@@ -124,10 +120,10 @@ export default function KitchenScreen() {
                     >
                       #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
                     </span>
-                    {order.customerName || `Order #${order.orderNumber}`}
+                    {order.customerName || formatTicketCode(order.orderNumber)}
                     {order.priority && <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem', padding: '0.15rem 0.5rem' }}>🔥 Priority</span>}
                   </h3>
-                  {order.customerName && <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.25rem' }}>Order #{order.orderNumber}</div>}
+                  {order.customerName && <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.25rem' }}>{formatTicketCode(order.orderNumber)}</div>}
                 </div>
                 {order.kitchenStatus === 'pending' ? (
                   <span className="badge badge-pending">Cooking</span>
