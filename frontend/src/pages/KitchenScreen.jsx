@@ -42,6 +42,10 @@ export default function KitchenScreen() {
     socket.emit('update_kitchen_status', { orderId, status: 'ready' });
   };
 
+  const markPending = (orderId) => {
+    socket.emit('update_kitchen_status', { orderId, status: 'pending' });
+  };
+
   const toggleKitchenItem = (itemId) => {
     socket.emit('toggle_kitchen_item', { itemId });
   };
@@ -136,13 +140,21 @@ export default function KitchenScreen() {
               })}
             </div>
             
-            {order.kitchenStatus === 'pending' && (
+            {order.kitchenStatus === 'pending' ? (
               <button 
                 className="btn btn-success" 
                 style={{ marginTop: '1rem', width: '100%' }}
                 onClick={() => markReady(order.id)}
               >
                 Food Ready
+              </button>
+            ) : (
+              <button 
+                className="btn btn-outline" 
+                style={{ marginTop: '1rem', width: '100%', borderColor: 'var(--warning)', color: 'var(--warning)' }}
+                onClick={() => markPending(order.id)}
+              >
+                ↩ Undo "Food Ready"
               </button>
             )}
           </div>
