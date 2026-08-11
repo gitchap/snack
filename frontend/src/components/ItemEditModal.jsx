@@ -27,6 +27,9 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
   const getAuthToken = () => token || localStorage.getItem('token');
 
   const parseErrorMessage = async (res) => {
+    if (res.status === 401 || res.status === 403) {
+      return 'Session expired or unauthorized. Please log out and log back in.';
+    }
     try {
       const text = await res.text();
       try {
