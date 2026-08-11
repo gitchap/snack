@@ -207,115 +207,86 @@ export default function ServiceScreen() {
               </div>
             
             <div className="ticket-items">
-              {order.orderItems.map(item => {
-                const isShelfItem = item.menuItem?.requiresCooking === false;
-                const isKitchenReady = item.kitchenItemStatus === 'ready';
-
-                return (
-                  <div 
-                    key={item.id} 
-                    className={`ticket-item ${item.itemStatus === 'fulfilled' ? 'fulfilled' : ''}`}
-                    style={{ 
-                      flexDirection: 'column', 
-                      alignItems: 'stretch',
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 'var(--radius-sm)',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
-                        {/* Qty badge */}
-                        <span style={{ 
-                          background: 'var(--primary)', 
-                          color: '#fff', 
-                          fontWeight: '800', 
-                          fontSize: '1.1rem', 
-                          padding: '0.2rem 0.55rem',
-                          borderRadius: 'var(--radius-md)',
-                          boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
-                          flexShrink: 0
-                        }}>
-                          {item.quantity}x
-                        </span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
-                          <span style={{ fontSize: '1.15rem', fontWeight: '500', color: '#ffffff', letterSpacing: '0.01em', lineHeight: '1.2' }}>
-                            {item.menuItem?.name || 'Unknown'}
-                          </span>
-                          <div>
-                            {isShelfItem ? (
-                              <span className="badge badge-shelf" style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem' }}>📦 Shelf Item</span>
-                            ) : (
-                              <span className="badge badge-kitchen" style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem' }}>🍳 Kitchen</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {item.itemStatus === 'pending' ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
-                          <button 
-                            className={`btn ${isKitchenReady ? 'btn-success' : 'btn-outline'}`} 
-                            style={{ 
-                              minHeight: 'var(--touch-min)',
-                              padding: '0 0.75rem',
-                              fontSize: '0.85rem',
-                              fontWeight: '700',
-                              borderColor: isKitchenReady ? undefined : 'rgba(245, 158, 11, 0.4)',
-                              color: isKitchenReady ? undefined : 'var(--warning)'
-                            }}
-                            title={isKitchenReady ? 'Marked Ready' : 'Mark Ready'}
-                            onClick={() => toggleKitchenItem(item.id)}
-                          >
-                            {isKitchenReady ? '✓ Ready' : 'Mark Ready'}
-                          </button>
-                          <button 
-                            className="btn btn-primary" 
-                            style={{ 
-                              minHeight: 'var(--touch-min)',
-                              padding: '0 0.9rem',
-                              fontSize: '0.95rem',
-                              fontWeight: '700',
-                            }}
-                            onClick={() => fulfillItem(item.id)}
-                          >
-                            Hand Off
-                          </button>
-                        </div>
-                      ) : (
-                        <button 
-                          className="btn btn-outline undo-item-btn" 
-                          title="Undo Hand Off"
-                          aria-label="Undo Hand Off"
-                          style={{ 
-                            width: 'var(--touch-min)',
-                            height: 'var(--touch-min)',
-                            minWidth: 'var(--touch-min)',
-                            minHeight: 'var(--touch-min)',
-                            padding: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: 'var(--radius-sm)',
-                            flexShrink: 0,
-                            background: 'rgba(255, 255, 255, 0.08)',
-                            borderColor: 'rgba(255, 255, 255, 0.2)',
-                            color: '#ffffff',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => unfulfillItem(item.id)}
-                        >
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M3 7v6h6" />
-                            <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-                          </svg>
-                        </button>
-                      )}
+              {order.orderItems.map(item => (
+                <div 
+                  key={item.id} 
+                  className={`ticket-item ${item.itemStatus === 'fulfilled' ? 'fulfilled' : ''}`}
+                  style={{ 
+                    flexDirection: 'column', 
+                    alignItems: 'stretch',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.85rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
+                      {/* Qty badge */}
+                      <span style={{ 
+                        background: 'var(--primary)', 
+                        color: '#fff', 
+                        fontWeight: '800', 
+                        fontSize: '1.1rem', 
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: 'var(--radius-md)',
+                        boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
+                        flexShrink: 0
+                      }}>
+                        {item.quantity}x
+                      </span>
+                      <span style={{ fontSize: '1.15rem', fontWeight: '500', color: '#ffffff', letterSpacing: '0.01em', lineHeight: '1.2' }}>
+                        {item.menuItem?.name || 'Unknown'}
+                      </span>
                     </div>
-                    {renderOptions(item.optionsSnapshot)}
+
+                    {item.itemStatus === 'pending' ? (
+                      <button 
+                        className="btn btn-primary" 
+                        style={{ 
+                          minHeight: 'var(--touch-min)',
+                          padding: '0 1rem',
+                          fontSize: '0.95rem',
+                          fontWeight: '700',
+                          flexShrink: 0
+                        }}
+                        onClick={() => fulfillItem(item.id)}
+                      >
+                        Hand Off
+                      </button>
+                    ) : (
+                      <button 
+                        className="btn btn-outline undo-item-btn" 
+                        title="Undo Hand Off"
+                        aria-label="Undo Hand Off"
+                        style={{ 
+                          width: 'var(--touch-min)',
+                          height: 'var(--touch-min)',
+                          minWidth: 'var(--touch-min)',
+                          minHeight: 'var(--touch-min)',
+                          padding: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: 'var(--radius-sm)',
+                          flexShrink: 0,
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          borderColor: 'rgba(255, 255, 255, 0.2)',
+                          color: '#ffffff',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => unfulfillItem(item.id)}
+                      >
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 7v6h6" />
+                          <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
-                );
-              })}
+                  {renderOptions(item.optionsSnapshot)}
+                </div>
+              ))}
             </div>
           </div>
         );

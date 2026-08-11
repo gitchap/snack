@@ -4,14 +4,12 @@ import CustomSelect from './CustomSelect';
 export default function ItemEditModal({ item, categories, token, onClose, onSaved }) {
   const [name, setName] = useState(item.name || '');
   const [categoryId, setCategoryId] = useState(item.categoryId);
-  const [requiresCooking, setRequiresCooking] = useState(item.requiresCooking !== false);
   const [options, setOptions] = useState(item.options || []);
 
   // Sync state if item prop changes
   useEffect(() => {
     setName(item.name || '');
     setCategoryId(item.categoryId);
-    setRequiresCooking(item.requiresCooking !== false);
     setOptions(item.options || []);
   }, [item]);
 
@@ -65,12 +63,12 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
         if (!ok) return;
       }
 
-      // 3. Save Item Name, Category & Item Type
+      // 3. Save Item Name & Category
       const targetCatId = parseInt(categoryId) || parseInt(item.categoryId);
       const res = await fetch(`/api/admin/menu/${item.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ name: name.trim(), categoryId: targetCatId, requiresCooking })
+        body: JSON.stringify({ name: name.trim(), categoryId: targetCatId })
       });
 
       if (res.ok) {
@@ -234,28 +232,6 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
                   onChange={val => setCategoryId(val)}
                   onAddNew={handleCreateCategory}
                 />
-              </div>
-            </div>
-            {/* Item Type Selector */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              <label style={{ fontSize: '0.9rem', color: '#cbd5e1', fontWeight: '600' }}>Item Type</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  className={`btn ${requiresCooking ? 'btn-primary' : 'btn-outline'}`}
-                  onClick={() => setRequiresCooking(true)}
-                  style={{ flex: 1, fontSize: '0.9rem' }}
-                >
-                  🍳 Kitchen Prep
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${!requiresCooking ? 'btn-primary' : 'btn-outline'}`}
-                  onClick={() => setRequiresCooking(false)}
-                  style={{ flex: 1, fontSize: '0.9rem' }}
-                >
-                  📦 Shelf / Grab & Go
-                </button>
               </div>
             </div>
           </div>

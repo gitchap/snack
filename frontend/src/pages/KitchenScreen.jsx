@@ -164,22 +164,22 @@ export default function KitchenScreen() {
             <div className="ticket-items">
               {order.orderItems.map(item => {
                 const isReady = item.kitchenItemStatus === 'ready';
-                const isShelfItem = item.menuItem?.requiresCooking === false;
                 return (
                   <div 
                     key={item.id} 
                     className="ticket-item" 
                     style={{ 
-                      flexDirection: 'column', 
+                      flexDirection: 'column',
                       alignItems: 'stretch',
                       background: isReady ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.04)',
                       border: isReady ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.08)',
                       borderRadius: 'var(--radius-sm)',
+                      padding: '0.85rem',
                       transition: 'all 0.2s ease'
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
                         {/* Qty badge */}
                         <span style={{ 
                           background: 'var(--primary)', 
@@ -193,31 +193,24 @@ export default function KitchenScreen() {
                         }}>
                           {item.quantity}x
                         </span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
-                          <span style={{ 
-                            fontSize: '1.15rem', 
-                            fontWeight: '500', 
-                            color: '#ffffff', 
-                            letterSpacing: '0.01em',
-                            textDecoration: isReady ? 'line-through' : 'none', 
-                            opacity: isReady ? 0.65 : 1,
-                            lineHeight: '1.2'
-                          }}>
-                            {item.menuItem?.name || 'Unknown Item'}
-                          </span>
-                          <div>
-                            {isShelfItem && (
-                              <span className="badge badge-shelf" style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem' }}>📦 Shelf Item - Service Counter</span>
-                            )}
-                          </div>
-                        </div>
+                        <span style={{ 
+                          fontSize: '1.15rem', 
+                          fontWeight: '500', 
+                          color: '#ffffff', 
+                          letterSpacing: '0.01em',
+                          textDecoration: isReady ? 'line-through' : 'none', 
+                          opacity: isReady ? 0.65 : 1,
+                          lineHeight: '1.2'
+                        }}>
+                          {item.menuItem?.name || 'Unknown Item'}
+                        </span>
                       </div>
                       <button 
                         className={`btn ${isReady ? 'btn-success' : 'btn-outline'}`} 
                         style={{ 
                           minHeight: 'var(--touch-min)',
                           padding: '0 1rem',
-                          fontSize: '0.95rem',
+                          fontSize: '0.9rem',
                           fontWeight: '700',
                           flexShrink: 0
                         }}

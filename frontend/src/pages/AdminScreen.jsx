@@ -14,13 +14,8 @@ function MenuItemCard({ item, onClick }) {
       style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', cursor: 'pointer' }}
       onClick={onClick}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <strong style={{ fontSize: '1.2rem', color: '#fff' }}>{item.name}</strong>
-        {item.requiresCooking === false ? (
-          <span className="badge badge-shelf">📦 Shelf</span>
-        ) : (
-          <span className="badge badge-kitchen">🍳 Kitchen</span>
-        )}
       </div>
 
       {item.options?.length > 0 && (
@@ -68,7 +63,6 @@ export default function AdminScreen() {
   // Add Item form state
   const [newItemName, setNewItemName] = useState('');
   const [newItemCategoryId, setNewItemCategoryId] = useState('');
-  const [newItemRequiresCooking, setNewItemRequiresCooking] = useState(true);
   const [pendingOptions, setPendingOptions] = useState([]);
   const [newOptName, setNewOptName] = useState('Ingredients');
   const [newOptChoices, setNewOptChoices] = useState('');
@@ -184,7 +178,7 @@ export default function AdminScreen() {
     const res = await fetch('/api/admin/menu', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name: newItemName, categoryId: parseInt(newItemCategoryId), requiresCooking: newItemRequiresCooking })
+      body: JSON.stringify({ name: newItemName, categoryId: parseInt(newItemCategoryId) })
     });
     const item = await res.json();
     for (const opt of pendingOptions) {
@@ -194,7 +188,7 @@ export default function AdminScreen() {
         body: JSON.stringify(opt)
       });
     }
-    setNewItemName(''); setPendingOptions([]); setNewItemRequiresCooking(true);
+    setNewItemName(''); setPendingOptions([]);
     setCreatedItemId(item.id);
     fetchMenu();
     setTimeout(() => setCreatedItemId(null), 3000);
@@ -237,28 +231,6 @@ export default function AdminScreen() {
                 onChange={val => setNewItemCategoryId(val)}
                 onAddNew={handleCreateCategory}
               />
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                <label style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: '600' }}>Item Type</label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button
-                    type="button"
-                    className={`btn ${newItemRequiresCooking ? 'btn-primary' : 'btn-outline'}`}
-                    onClick={() => setNewItemRequiresCooking(true)}
-                    style={{ flex: 1, fontSize: '0.85rem' }}
-                  >
-                    🍳 Kitchen Prep
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${!newItemRequiresCooking ? 'btn-primary' : 'btn-outline'}`}
-                    onClick={() => setNewItemRequiresCooking(false)}
-                    style={{ flex: 1, fontSize: '0.85rem' }}
-                  >
-                    📦 Shelf / Grab & Go
-                  </button>
-                </div>
-              </div>
 
               {pendingOptions.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
