@@ -61,15 +61,23 @@ export default function KitchenScreen() {
       const entries = Object.entries(parsed).filter(([_, val]) => Array.isArray(val) && val.length > 0);
       if (entries.length === 0) return null;
       return (
-        <div className="options-list" style={{ marginTop: '0.4rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+        <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           {entries.map(([groupName, choices]) => (
-            <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {groupName}
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                 {choices.map((c, idx) => (
-                  <div key={idx} className="option-chip" style={{ padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', fontSize: '0.88rem', color: '#cbd5e1', borderLeft: '2px solid rgba(139, 92, 246, 0.6)', fontWeight: '500' }}>
+                  <div key={idx} style={{
+                    padding: '0.3rem 0.65rem',
+                    background: 'rgba(255,255,255,0.05)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.9rem',
+                    color: 'var(--text-muted)',
+                    borderLeft: '2px solid rgba(139, 92, 246, 0.55)',
+                    fontWeight: '500'
+                  }}>
                     {c}
                   </div>
                 ))}
@@ -105,42 +113,50 @@ export default function KitchenScreen() {
                 boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 16px rgba(139, 92, 246, 0.35)' : undefined
               }}
             >
-              <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+              <div className="ticket-header">
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                  {/* Queue position badge */}
                   <span 
                     style={{ 
-                      fontSize: '0.85rem', 
-                      padding: '0.25rem 0.55rem', 
-                      borderRadius: '6px', 
+                      fontSize: '0.9rem', 
+                      padding: '0 0.75rem',
+                      minHeight: 'var(--touch-min)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      borderRadius: 'var(--radius-md)', 
                       background: isFirstInQueue ? 'var(--primary)' : 'rgba(255,255,255,0.12)', 
                       color: '#fff',
                       fontWeight: '800',
                       flexShrink: 0,
-                      marginTop: '0.15rem'
                     }}
                   >
                     #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
                   </span>
 
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.35rem', lineHeight: '1.2' }}>
-                      {order.customerName || formatTicketCode(order.orderNumber)}
-                      {order.priority && <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem', padding: '0.15rem 0.5rem' }}>🔥 Priority</span>}
-                    </h3>
+                  {/* Name + ticket code column */}
+                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
+                        {order.customerName || formatTicketCode(order.orderNumber)}
+                      </h3>
+                      {order.priority && (
+                        <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem' }}>🔥 Priority</span>
+                      )}
+                    </div>
                     {order.customerName && (
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.2rem', fontWeight: '500' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.15rem', fontWeight: '500' }}>
                         {formatTicketCode(order.orderNumber)}
                       </div>
                     )}
                   </div>
                 </div>
 
+                {/* Status badge — right column */}
                 {order.kitchenStatus === 'pending' ? (
                   <span className="badge badge-pending">Cooking</span>
                 ) : (
                   <span 
                     className="badge badge-ready" 
-                    style={{ cursor: 'pointer', userSelect: 'none' }} 
                     title="Tap to Undo Food Ready"
                     onClick={() => setConfirmUndoOrder(order)}
                   >
@@ -158,25 +174,27 @@ export default function KitchenScreen() {
                     className="ticket-item" 
                     style={{ 
                       flexDirection: 'column', 
-                      alignItems: 'flex-start',
-                      background: isReady ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255,255,255,0.04)',
+                      alignItems: 'stretch',
+                      background: isReady ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.04)',
                       border: isReady ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.08)',
-                      padding: '0.75rem',
                       borderRadius: 'var(--radius-sm)',
-                      marginBottom: '0.5rem',
                       transition: 'all 0.2s ease'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
+                        {/* Qty badge */}
                         <span style={{ 
                           background: 'var(--primary)', 
                           color: '#fff', 
                           fontWeight: '800', 
-                          fontSize: '1.15rem', 
-                          padding: '0.2rem 0.55rem', 
-                          borderRadius: '6px',
-                          boxShadow: '0 2px 6px rgba(139, 92, 246, 0.4)',
+                          fontSize: '1rem', 
+                          padding: '0 0.6rem',
+                          minHeight: 'var(--touch-min)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          borderRadius: 'var(--radius-md)',
+                          boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
                           flexShrink: 0
                         }}>
                           {item.quantity}x
@@ -187,14 +205,20 @@ export default function KitchenScreen() {
                           color: '#ffffff', 
                           letterSpacing: '0.01em',
                           textDecoration: isReady ? 'line-through' : 'none', 
-                          opacity: isReady ? 0.75 : 1 
+                          opacity: isReady ? 0.65 : 1 
                         }}>
                           {item.menuItem?.name || 'Unknown Item'}
                         </span>
                       </div>
                       <button 
                         className={`btn ${isReady ? 'btn-success' : 'btn-outline'}`} 
-                        style={{ padding: '0.3rem 0.75rem', fontSize: '0.9rem', cursor: 'pointer', fontWeight: 'bold' }}
+                        style={{ 
+                          minHeight: 'var(--touch-min)',
+                          padding: '0 1rem',
+                          fontSize: '0.95rem',
+                          fontWeight: '700',
+                          flexShrink: 0
+                        }}
                         onClick={() => toggleKitchenItem(item.id)}
                       >
                         {isReady ? '✓ Ready' : 'Prep'}

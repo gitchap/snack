@@ -15,9 +15,13 @@
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
+  /* Radius scale — use these everywhere, never hardcode px */
+  --radius-lg: 16px;   /* ticket cards, modals */
+  --radius-md: 12px;   /* buttons, badges, qty squares, chips */
+  --radius-sm: 8px;    /* item sub-cards inside tickets */
+
+  /* Touch target minimum — Apple/Google HIG: 44px */
+  --touch-min: 44px;
 }
 
 * {
@@ -230,15 +234,26 @@ input[type="number"] {
   text-align: center;
 }
 
-/* Badges */
+/* Badges — all use --radius-md for a consistent squarish-rounded look */
 .badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-min);
+  padding: 0 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .badge-pending { background: var(--warning); color: #000; }
-.badge-ready { background: var(--success); color: #fff; }
+.badge-ready {
+  background: var(--success);
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+}
 
 /* Menus & Tabs */
 .tabs {
@@ -318,26 +333,37 @@ input[type="number"] {
   flex-direction: column;
   gap: 1rem;
   transition: all 0.3s ease;
+  /* overflow visible so glow box-shadow isn't clipped */
+  overflow: visible;
 }
 .ticket.ticket-ready {
   border: 2px solid var(--success);
-  box-shadow: 0 0 22px rgba(16, 185, 129, 0.45);
+  /* spread the glow so it isn't clipped by the card edge */
+  box-shadow: 0 0 0 2px var(--success), 0 0 28px 6px rgba(16, 185, 129, 0.45);
 }
 .ticket.ticket-ready .ticket-header {
-  background: rgba(16, 185, 129, 0.15);
-  margin: -1.5rem -1.5rem 0.5rem -1.5rem;
-  padding: 1rem 1.5rem;
+  background: rgba(16, 185, 129, 0.12);
+  /* use padding instead of negative-margin hack to avoid layout issues */
+  margin: -1.5rem -1.5rem 0 -1.5rem;
+  padding: 1rem 1.5rem 1rem 1.5rem;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.25);
 }
 .ticket.ticket-pending {
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  border: 1px solid rgba(245, 158, 11, 0.35);
 }
 .ticket-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--glass-border);
+  gap: 0.75rem;
   padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+/* When ticket-ready overrides the header, remove the generic border-bottom */
+.ticket.ticket-ready .ticket-header {
+  padding-bottom: 0;
+  border-bottom: none;
 }
 .ticket-items {
   display: flex;
@@ -348,7 +374,7 @@ input[type="number"] {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem;
+  padding: 0.75rem;
   background: rgba(255,255,255,0.03);
   border-radius: var(--radius-sm);
 }
