@@ -164,7 +164,7 @@ export default function ServiceScreen() {
               className={`glass glass-card ticket ${order.kitchenStatus === 'ready' ? 'ticket-ready' : 'ticket-pending'}`}
               style={{
                 borderColor: isFirstInQueue && order.kitchenStatus !== 'ready' ? 'var(--primary)' : undefined,
-                boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 16px rgba(139, 92, 246, 0.35)' : undefined
+                boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
               }}
             >
               <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

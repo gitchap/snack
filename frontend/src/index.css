@@ -416,8 +416,7 @@ input[type="number"] {
 
 .ticket.ticket-ready {
   border: 2px solid var(--success);
-  /* spread the glow so it isn't clipped by the card edge */
-  box-shadow: 0 0 0 2px var(--success), 0 0 28px 6px rgba(16, 185, 129, 0.45);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
 }
 
 .ticket.ticket-ready .ticket-header {
