@@ -37,39 +37,54 @@ const authenticateToken = (req, res, next) => {
 // --- REST API ---
 
 app.post('/api/auth/login', async (req, res) => {
-  const { username, pin } = req.body;
-  if (!username || !pin) return res.status(400).json({ error: 'Username and PIN required' });
-  
-  const user = await prisma.user.findUnique({ where: { username } });
-  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-  
-  const valid = await bcrypt.compare(pin, user.pin);
-  if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
-  
-  const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '12h' });
-  res.json({ token, role: user.role });
+  try {
+    const { username, pin } = req.body;
+    if (!username || !pin) return res.status(400).json({ error: 'Username and PIN required' });
+    
+    const user = await prisma.user.findUnique({ where: { username } });
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    
+    const valid = await bcrypt.compare(pin, user.pin);
+    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+    
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '12h' });
+    res.json({ token, role: user.role });
+  } catch (e) {
+    console.error('Login error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // User Management APIs
 app.get('/api/admin/users', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const users = await prisma.user.findMany({
-    select: { id: true, username: true, role: true, createdAt: true }
-  });
-  res.json(users);
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, username: true, role: true, createdAt: true }
+    });
+    res.json(users);
+  } catch (e) {
+    console.error('Fetch users error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.put('/api/admin/users/:id/pin', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
-  const { pin } = req.body;
-  if (!pin || pin.trim().length === 0) return res.status(400).json({ error: 'PIN required' });
-  
-  const pinHash = await bcrypt.hash(pin, 10);
-  await prisma.user.update({
-    where: { id: parseInt(req.params.id) },
-    data: { pin: pinHash }
-  });
-  res.json({ success: true });
+  try {
+    const { pin } = req.body;
+    if (!pin || pin.trim().length === 0) return res.status(400).json({ error: 'PIN required' });
+    
+    const pinHash = await bcrypt.hash(pin, 10);
+    await prisma.user.update({
+      where: { id: parseInt(req.params.id) },
+      data: { pin: pinHash }
+    });
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Update PIN error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Admin REST API for Categories (Protected)
@@ -237,33 +252,43 @@ app.delete('/api/admin/options/:optionId', authenticateToken, async (req, res) =
 
 // Get Menu (Public/Kiosk accessible)
 app.get('/api/menu', async (req, res) => {
-  const categories = await prisma.category.findMany({
-    include: {
-      menuItems: {
-        include: {
-          options: true
+  try {
+    const categories = await prisma.category.findMany({
+      include: {
+        menuItems: {
+          include: {
+            options: true
+          }
         }
       }
-    }
-  });
-  res.json(categories);
+    });
+    res.json(categories);
+  } catch (e) {
+    console.error('Fetch menu error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Get Active Orders
 app.get('/api/orders/active', async (req, res) => {
-  const orders = await prisma.order.findMany({
-    where: { status: 'active' },
-    orderBy: [
-      { priority: 'desc' },
-      { createdAt: 'asc' }
-    ],
-    include: {
-      orderItems: {
-        include: { menuItem: true }
+  try {
+    const orders = await prisma.order.findMany({
+      where: { status: 'active' },
+      orderBy: [
+        { priority: 'desc' },
+        { createdAt: 'asc' }
+      ],
+      include: {
+        orderItems: {
+          include: { menuItem: true }
+        }
       }
-    }
-  });
-  res.json(orders);
+    });
+    res.json(orders);
+  } catch (e) {
+    console.error('Fetch active orders error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Get Order History (completed/cancelled orders or search)

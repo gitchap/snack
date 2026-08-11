@@ -9,11 +9,18 @@
   --primary: #8b5cf6;
   --primary-hover: #7c3aed;
   --success: #10b981;
+  --success-dim: rgba(16, 185, 129, 0.1);
+  --success-border: rgba(16, 185, 129, 0.3);
+  --success-glow: rgba(16, 185, 129, 0.45);
   --danger: #ef4444;
   --warning: #f59e0b;
+  --warning-dim: rgba(245, 158, 11, 0.06);
+  --warning-border: rgba(245, 158, 11, 0.4);
 
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
+  --text-subtle: #cbd5e1;
+  --glass-hover: rgba(255, 255, 255, 0.08);
 
   /* Radius scale — use these everywhere, never hardcode px */
   --radius-lg: 10px;

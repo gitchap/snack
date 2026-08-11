@@ -236,7 +236,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
             </div>
           </div>
 
-          <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0.5rem 0' }} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--glass-border)', margin: '0.5rem 0' }} />
 
           {/* Option Groups List */}
           <div>
@@ -266,7 +266,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
                   }
 
                   return (
-                    <div key={opt.id} style={{ background: 'rgba(255,255,255,0.04)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={opt.id} style={{ background: 'var(--glass-bg)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <strong>{opt.name}:</strong> <span style={{ color: 'var(--text-muted)' }}>{opt.choices}</span>
                         <div style={{ fontSize: '0.85rem', display: 'flex', gap: '0.75rem', marginTop: '0.2rem' }}>

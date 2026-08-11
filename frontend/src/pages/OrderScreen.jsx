@@ -3,6 +3,7 @@ import { SocketContext, AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import ItemCustomizerModal from '../components/ItemCustomizerModal';
 import useFavicon from '../hooks/useFavicon';
+import { useActionLock } from '../hooks/useActionLock';
 
 export default function OrderScreen() {
   useFavicon('order.png', 'Order Kiosk - Snack Shack');
@@ -74,7 +75,9 @@ export default function OrderScreen() {
     setCart(cart.filter(c => c.cartId !== cartId));
   };
 
-  const submitOrder = () => {
+  const { withLock, isLocked } = useActionLock(1500);
+
+  const submitOrder = withLock('submitOrder', () => {
     if (cart.length === 0) return;
     const items = cart.map(c => ({
       menuItemId: c.id,
@@ -85,7 +88,7 @@ export default function OrderScreen() {
     setCart([]);
     setCustomerName('');
     setPriority(false);
-  };
+  });
 
   const formatSnapshot = (snapshot) => {
     if (!snapshot || Object.keys(snapshot).length === 0) return null;
@@ -97,18 +100,18 @@ export default function OrderScreen() {
         <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           {entries.map(([groupName, choices]) => (
             <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <div style={{ fontSize: '0.7rem', color: '#cbd5e1', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-subtle)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {groupName}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                 {choices.map((c, idx) => (
                   <div key={idx} style={{
                     padding: '0.3rem 0.65rem',
-                    background: 'rgba(255,255,255,0.08)',
+                    background: 'var(--glass-hover)',
                     borderRadius: 'var(--radius-sm)',
                     fontSize: '0.9rem',
-                    color: '#ffffff',
-                    borderLeft: '2px solid rgba(139, 92, 246, 0.7)',
+                    color: 'var(--text-main)',
+                    borderLeft: '2px solid var(--primary)',
                     fontWeight: '500'
                   }}>
                     {c}
@@ -163,7 +166,7 @@ export default function OrderScreen() {
           <div ref={menuContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {menu.map(cat => (
               <div key={cat.id} id={`category-sec-${cat.id}`}>
-                <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem', color: 'var(--text-main)', fontSize: '1.4rem' }}>
+                <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem', color: 'var(--text-main)', fontSize: '1.4rem' }}>
                   {cat.name}
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.25rem' }}>

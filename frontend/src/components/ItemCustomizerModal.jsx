@@ -51,10 +51,10 @@ export default function ItemCustomizerModal({ item, onClose, onConfirm }) {
 
             return (
               <div key={opt.id} style={{ 
-                background: isMissing ? 'rgba(245, 158, 11, 0.06)' : 'transparent',
+                background: isMissing ? 'var(--warning-dim)' : 'transparent',
                 padding: isMissing ? '0.75rem' : '0',
                 borderRadius: 'var(--radius-sm)',
-                border: isMissing ? '1px dashed rgba(245, 158, 11, 0.4)' : 'none',
+                border: isMissing ? '1px dashed var(--warning-border)' : 'none',
                 transition: 'all 0.2s ease'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>

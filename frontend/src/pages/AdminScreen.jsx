@@ -15,12 +15,12 @@ function MenuItemCard({ item, onClick }) {
       onClick={onClick}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <strong style={{ fontSize: '1.2rem', color: '#fff' }}>{item.name}</strong>
+        <strong style={{ fontSize: '1.2rem', color: 'var(--text-main)' }}>{item.name}</strong>
       </div>
 
       {item.options?.length > 0 && (
         <>
-          <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '0' }} />
+          <hr style={{ border: 'none', borderTop: '1px solid var(--glass-border)', margin: '0' }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             {item.options.map(o => (
               <div key={o.id}>
@@ -38,7 +38,7 @@ function MenuItemCard({ item, onClick }) {
         </>
       )}
 
-      <div style={{ marginTop: '0.25rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ marginTop: '0.25rem', paddingTop: '0.5rem', borderTop: '1px solid var(--glass-border)' }}>
         <span style={{ color: 'var(--primary)', fontSize: '0.9rem', opacity: 0.9 }}>Click to edit</span>
       </div>
     </div>
@@ -285,13 +285,13 @@ export default function AdminScreen() {
             {categories.map(cat => (
               <div key={cat.id} className="glass glass-card">
                 {editingCatId === cat.id ? (
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.75rem', alignItems: 'center' }}>
                     <input className="input" value={editCatName} onChange={e => setEditCatName(e.target.value)} placeholder="Category Name" style={{ flex: 1 }} />
                     <button className="btn btn-success" onClick={() => handleSaveCategoryName(cat.id)}>Save</button>
                     <button className="btn btn-outline" onClick={() => setEditingCatId(null)}>Cancel</button>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>
                     <h3 style={{ margin: 0 }}>{cat.name}</h3>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button

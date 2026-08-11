@@ -87,7 +87,7 @@ export default function CustomSelect({ options = [], value, onChange, onAddNew, 
                     cursor: 'pointer',
                     fontSize: '1rem',
                     fontWeight: isSelected ? '600' : 'normal',
-                    color: isSelected ? '#ffffff' : 'var(--text-main)',
+                    color: isSelected ? 'var(--text-main)' : 'var(--text-main)',
                     background: isSelected ? 'var(--primary)' : 'transparent',
                     transition: 'background 0.15s ease'
                   }}
@@ -118,8 +118,8 @@ export default function CustomSelect({ options = [], value, onChange, onAddNew, 
                   cursor: 'pointer',
                   fontSize: '1rem',
                   fontWeight: '600',
-                  color: '#a78bfa',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: 'var(--primary-hover)',
+                  borderTop: '1px solid var(--glass-border)',
                   background: 'rgba(139, 92, 246, 0.08)',
                   transition: 'background 0.15s ease'
                 }}

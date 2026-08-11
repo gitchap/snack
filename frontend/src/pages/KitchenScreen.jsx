@@ -3,6 +3,7 @@ import { SocketContext, AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import useFavicon from '../hooks/useFavicon';
 import { formatTicketCode } from '../utils/formatTicket';
+import { useActionLock } from '../hooks/useActionLock';
 
 export default function KitchenScreen() {
   useFavicon('kitchen.png', 'Kitchen Display - Snack Shack');
@@ -42,17 +43,19 @@ export default function KitchenScreen() {
     };
   }, [socket]);
 
-  const markReady = (orderId) => {
+  const { withLock, isLocked } = useActionLock(1000);
+
+  const markReady = withLock('markReady', (orderId) => {
     socket.emit('update_kitchen_status', { orderId, status: 'ready' });
-  };
+  });
 
-  const markPending = (orderId) => {
+  const markPending = withLock('markPending', (orderId) => {
     socket.emit('update_kitchen_status', { orderId, status: 'pending' });
-  };
+  });
 
-  const toggleKitchenItem = (itemId) => {
+  const toggleKitchenItem = withLock('toggleKitchenItem', (itemId) => {
     socket.emit('toggle_kitchen_item', { itemId });
-  };
+  });
 
   const renderOptions = (optionsSnapshot) => {
     if (!optionsSnapshot) return null;
@@ -64,18 +67,18 @@ export default function KitchenScreen() {
         <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           {entries.map(([groupName, choices]) => (
             <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <div style={{ fontSize: '0.7rem', color: '#cbd5e1', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-subtle)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {groupName}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                 {choices.map((c, idx) => (
                   <div key={idx} style={{
                     padding: '0.3rem 0.65rem',
-                    background: 'rgba(255,255,255,0.08)',
+                    background: 'var(--glass-hover)',
                     borderRadius: 'var(--radius-sm)',
                     fontSize: '0.9rem',
-                    color: '#ffffff',
-                    borderLeft: '2px solid rgba(139, 92, 246, 0.7)',
+                    color: 'var(--text-main)',
+                    borderLeft: '2px solid var(--primary)',
                     fontWeight: '500'
                   }}>
                     {c}
@@ -120,8 +123,8 @@ export default function KitchenScreen() {
                     fontSize: '0.85rem', 
                     padding: '0.25rem 0.55rem',
                     borderRadius: 'var(--radius-md)', 
-                    background: isFirstInQueue ? 'var(--primary)' : 'rgba(255,255,255,0.12)', 
-                    color: '#fff',
+                    background: isFirstInQueue ? 'var(--primary)' : 'var(--glass-border)', 
+                    color: 'var(--text-main)',
                     fontWeight: '800',
                     flexShrink: 0,
                     marginTop: '0.05rem'
@@ -171,8 +174,8 @@ export default function KitchenScreen() {
                     style={{ 
                       flexDirection: 'column',
                       alignItems: 'stretch',
-                      background: isReady ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.04)',
-                      border: isReady ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255,255,255,0.08)',
+                      background: isReady ? 'var(--success-dim)' : 'var(--glass-bg)',
+                      border: isReady ? '1px solid var(--success-border)' : '1px solid var(--glass-border)',
                       borderRadius: 'var(--radius-sm)',
                       padding: '0.85rem',
                       transition: 'all 0.2s ease'
@@ -183,7 +186,7 @@ export default function KitchenScreen() {
                         {/* Qty badge */}
                         <span style={{ 
                           background: 'var(--primary)', 
-                          color: '#fff', 
+                          color: 'var(--text-main)', 
                           fontWeight: '800', 
                           fontSize: '1.1rem', 
                           padding: '0.2rem 0.55rem',
@@ -196,7 +199,7 @@ export default function KitchenScreen() {
                         <span style={{ 
                           fontSize: '1.15rem', 
                           fontWeight: '500', 
-                          color: '#ffffff', 
+                          color: 'var(--text-main)', 
                           letterSpacing: '0.01em',
                           textDecoration: isReady ? 'line-through' : 'none', 
                           opacity: isReady ? 0.65 : 1,

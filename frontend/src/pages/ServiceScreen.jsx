@@ -3,6 +3,7 @@ import { SocketContext, AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import useFavicon from '../hooks/useFavicon';
 import { formatTicketCode } from '../utils/formatTicket';
+import { useActionLock } from '../hooks/useActionLock';
 
 export default function ServiceScreen() {
   useFavicon('service.png', 'Service Display - Snack Shack');
@@ -87,22 +88,24 @@ export default function ServiceScreen() {
     }
   };
 
-  const fulfillItem = (itemId) => {
+  const { withLock, isLocked } = useActionLock(1000);
+
+  const fulfillItem = withLock('fulfillItem', (itemId) => {
     socket.emit('fulfill_item', { itemId });
-  };
+  });
 
-  const unfulfillItem = (itemId) => {
+  const unfulfillItem = withLock('unfulfillItem', (itemId) => {
     socket.emit('unfulfill_item', { itemId });
-  };
+  });
 
-  const toggleKitchenItem = (itemId) => {
+  const toggleKitchenItem = withLock('toggleKitchenItem', (itemId) => {
     socket.emit('toggle_kitchen_item', { itemId });
-  };
+  });
 
-  const handleRecallOrder = (orderId) => {
+  const handleRecallOrder = withLock('recallOrder', (orderId) => {
     socket.emit('recall_order', { orderId });
     setHistoryOrders(prev => prev.filter(o => o.id !== orderId));
-  };
+  });
 
   const renderOptions = (optionsSnapshot) => {
     if (!optionsSnapshot) return null;
@@ -114,18 +117,18 @@ export default function ServiceScreen() {
         <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           {entries.map(([groupName, choices]) => (
             <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <div style={{ fontSize: '0.7rem', color: '#cbd5e1', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-subtle)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {groupName}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                 {choices.map((c, idx) => (
                   <div key={idx} style={{
                     padding: '0.3rem 0.65rem',
-                    background: 'rgba(255,255,255,0.08)',
+                    background: 'var(--glass-hover)',
                     borderRadius: 'var(--radius-sm)',
                     fontSize: '0.9rem',
-                    color: '#ffffff',
-                    borderLeft: '2px solid rgba(139, 92, 246, 0.7)',
+                    color: 'var(--text-main)',
+                    borderLeft: '2px solid var(--primary)',
                     fontWeight: '500'
                   }}>
                     {c}
@@ -171,8 +174,8 @@ export default function ServiceScreen() {
                     fontSize: '0.85rem', 
                     padding: '0.25rem 0.55rem',
                     borderRadius: 'var(--radius-md)', 
-                    background: isFirstInQueue ? 'var(--primary)' : 'rgba(255,255,255,0.12)', 
-                    color: '#fff',
+                    background: isFirstInQueue ? 'var(--primary)' : 'var(--glass-border)', 
+                    color: 'var(--text-main)',
                     fontWeight: '800',
                     flexShrink: 0,
                     marginTop: '0.05rem'
@@ -214,8 +217,8 @@ export default function ServiceScreen() {
                   style={{ 
                     flexDirection: 'column', 
                     alignItems: 'stretch',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'var(--glass-bg)',
+                    border: '1px solid var(--glass-border)',
                     borderRadius: 'var(--radius-sm)',
                     padding: '0.85rem'
                   }}
@@ -225,7 +228,7 @@ export default function ServiceScreen() {
                       {/* Qty badge */}
                       <span style={{ 
                         background: 'var(--primary)', 
-                        color: '#fff', 
+                        color: 'var(--text-main)', 
                         fontWeight: '800', 
                         fontSize: '1.1rem', 
                         padding: '0.2rem 0.55rem',
@@ -235,7 +238,7 @@ export default function ServiceScreen() {
                       }}>
                         {item.quantity}x
                       </span>
-                      <span style={{ fontSize: '1.15rem', fontWeight: '500', color: '#ffffff', letterSpacing: '0.01em', lineHeight: '1.2' }}>
+                      <span style={{ fontSize: '1.15rem', fontWeight: '500', color: 'var(--text-main)', letterSpacing: '0.01em', lineHeight: '1.2' }}>
                         {item.menuItem?.name || 'Unknown'}
                       </span>
                     </div>
