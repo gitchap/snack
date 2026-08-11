@@ -284,6 +284,12 @@ io.on('connection', (socket) => {
 
   socket.on('update_kitchen_status', async ({ orderId, status }) => {
     try {
+      if (status === 'ready') {
+        await prisma.orderItem.updateMany({
+          where: { orderId },
+          data: { kitchenItemStatus: 'ready' }
+        });
+      }
       const order = await prisma.order.update({
         where: { id: orderId },
         data: { kitchenStatus: status },
