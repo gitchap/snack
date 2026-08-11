@@ -272,23 +272,23 @@ export default function AdminScreen() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
                     <h3 style={{ margin: 0 }}>{cat.name}</h3>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        className="btn btn-outline"
-                        style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
-                        onClick={() => { setEditingCatId(cat.id); setEditCatName(cat.name); }}
-                      >
-                        Rename
-                      </button>
-                      {(!cat.menuItems || cat.menuItems.length === 0) && (
                         <button
-                          className="btn btn-danger"
-                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
-                          onClick={() => handleDeleteCategory(cat.id)}
+                          className="btn btn-outline"
+                          style={{ minHeight: 'var(--touch-min)', padding: '0 1rem', fontSize: '0.9rem' }}
+                          onClick={() => { setEditingCatId(cat.id); setEditCatName(cat.name); }}
                         >
-                          Delete Category
+                          Rename
                         </button>
-                      )}
-                    </div>
+                        {(!cat.menuItems || cat.menuItems.length === 0) && (
+                          <button
+                            className="btn btn-danger"
+                            style={{ minHeight: 'var(--touch-min)', padding: '0 1rem', fontSize: '0.9rem' }}
+                            onClick={() => handleDeleteCategory(cat.id)}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
                   </div>
                 )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
@@ -337,7 +337,7 @@ export default function AdminScreen() {
                     </div>
                   </div>
                   <span className="badge" style={{ background: order.status === 'completed' ? 'var(--success)' : 'var(--danger)', color: '#fff' }}>
-                    {order.status}
+                    {order.status === 'completed' ? 'Completed' : 'Recalled'}
                   </span>
                 </div>
 
@@ -351,7 +351,7 @@ export default function AdminScreen() {
 
                 <button 
                   className="btn btn-outline" 
-                  style={{ width: '100%', borderColor: 'var(--primary)', color: 'var(--primary)', marginTop: '0.5rem' }}
+                  style={{ width: '100%', borderColor: 'var(--primary)', color: 'var(--primary)', marginTop: '0.5rem', minHeight: 'var(--touch-min)' }}
                   onClick={() => handleRecallOrder(order.id)}
                 >
                   ↩ Recall to Active Queue

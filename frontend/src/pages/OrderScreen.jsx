@@ -94,15 +94,23 @@ export default function OrderScreen() {
       const entries = Object.entries(parsed).filter(([_, val]) => Array.isArray(val) && val.length > 0);
       if (entries.length === 0) return null;
       return (
-        <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           {entries.map(([groupName, choices]) => (
             <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {groupName}
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                 {choices.map((c, idx) => (
-                  <div key={idx} className="option-chip" style={{ padding: '0.25rem 0.55rem', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', fontSize: '0.9rem', color: '#a7f3d0', borderLeft: '3px solid var(--primary)', fontWeight: '600' }}>
+                  <div key={idx} style={{
+                    padding: '0.3rem 0.65rem',
+                    background: 'rgba(255,255,255,0.06)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.9rem',
+                    color: 'var(--text-muted)',
+                    borderLeft: '2px solid rgba(139, 92, 246, 0.55)',
+                    fontWeight: '500'
+                  }}>
                     {c}
                   </div>
                 ))}
@@ -183,9 +191,24 @@ export default function OrderScreen() {
                 <div key={item.cartId} className="cart-item glass" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <strong>{item.name}</strong>
+                      <strong style={{ fontSize: '1.05rem' }}>{item.name}</strong>
                     </div>
-                    <button className="btn btn-icon btn-danger" style={{ borderRadius: '50%', width: '32px', height: '32px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => removeFromCart(item.cartId)}>×</button>
+                    <button
+                      className="btn btn-danger"
+                      style={{
+                        minHeight: 'var(--touch-min)',
+                        minWidth: 'var(--touch-min)',
+                        padding: '0',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '1.25rem',
+                        lineHeight: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}
+                      onClick={() => removeFromCart(item.cartId)}
+                    >×</button>
                   </div>
                   {formattedOpts}
                 </div>
