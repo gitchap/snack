@@ -234,15 +234,14 @@ input[type="number"] {
   text-align: center;
 }
 
-/* Badges — all use --radius-md for a consistent squarish-rounded look */
+/* Badges — display only, compact. Only tappable .btn elements need 44px. */
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--touch-min);
-  padding: 0 1rem;
+  padding: 0.3rem 0.75rem;
   border-radius: var(--radius-md);
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
@@ -251,8 +250,11 @@ input[type="number"] {
 .badge-ready {
   background: var(--success);
   color: #fff;
+  /* Food Ready ↩ is tappable, so give it a comfortable touch target */
   cursor: pointer;
   user-select: none;
+  min-height: var(--touch-min);
+  padding: 0 1rem;
 }
 
 /* Menus & Tabs */

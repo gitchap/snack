@@ -134,44 +134,36 @@ export default function ServiceScreen() {
               }}
             >
               <div className="ticket-header">
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', flex: 1, minWidth: 0 }}>
-                  {/* Queue position badge */}
-                  <span 
-                    style={{ 
-                      fontSize: '0.9rem', 
-                      padding: '0 0.75rem',
-                      minHeight: 'var(--touch-min)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1, minWidth: 0 }}>
+                  {/* Queue badge + Name on the same line */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ 
+                      fontSize: '0.85rem', 
+                      padding: '0.25rem 0.55rem',
                       borderRadius: 'var(--radius-md)', 
                       background: isFirstInQueue ? 'var(--primary)' : 'rgba(255,255,255,0.12)', 
                       color: '#fff',
                       fontWeight: '800',
                       flexShrink: 0,
-                    }}
-                  >
-                    #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
-                  </span>
-
-                  {/* Name + ticket code column */}
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
-                        {order.customerName || formatTicketCode(order.orderNumber)}
-                      </h3>
-                      {order.priority && (
-                        <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem' }}>🔥 Priority</span>
-                      )}
-                    </div>
-                    {order.customerName && (
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.15rem', fontWeight: '500' }}>
-                        {formatTicketCode(order.orderNumber)}
-                      </div>
+                    }}>
+                      #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
+                    </span>
+                    <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
+                      {order.customerName || formatTicketCode(order.orderNumber)}
+                    </h3>
+                    {order.priority && (
+                      <span className="badge" style={{ background: 'var(--warning)', color: '#000' }}>🔥 Priority</span>
                     )}
                   </div>
+                  {/* Ticket code below the name */}
+                  {order.customerName && (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', paddingLeft: '0.1rem', fontWeight: '500' }}>
+                      {formatTicketCode(order.orderNumber)}
+                    </div>
+                  )}
                 </div>
 
-                {/* Status badge — right column */}
+                {/* Status badge — right */}
                 {order.kitchenStatus === 'pending' ? (
                   <span className="badge badge-pending">Kitchen Prep</span>
                 ) : (
@@ -199,11 +191,8 @@ export default function ServiceScreen() {
                         background: 'var(--primary)', 
                         color: '#fff', 
                         fontWeight: '800', 
-                        fontSize: '1rem', 
-                        padding: '0 0.6rem',
-                        minHeight: 'var(--touch-min)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
+                        fontSize: '1.1rem', 
+                        padding: '0.2rem 0.55rem',
                         borderRadius: 'var(--radius-md)',
                         boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
                         flexShrink: 0
