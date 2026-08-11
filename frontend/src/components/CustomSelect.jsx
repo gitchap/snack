@@ -81,6 +81,9 @@ export default function CustomSelect({ options = [], value, onChange, onAddNew, 
                   key={opt.value}
                   style={{
                     padding: '0.75rem 1rem',
+                    minHeight: 'var(--touch-min)',
+                    display: 'flex',
+                    alignItems: 'center',
                     cursor: 'pointer',
                     fontSize: '1rem',
                     fontWeight: isSelected ? '600' : 'normal',
@@ -109,6 +112,9 @@ export default function CustomSelect({ options = [], value, onChange, onAddNew, 
               <div
                 style={{
                   padding: '0.75rem 1rem',
+                  minHeight: 'var(--touch-min)',
+                  display: 'flex',
+                  alignItems: 'center',
                   cursor: 'pointer',
                   fontSize: '1rem',
                   fontWeight: '600',

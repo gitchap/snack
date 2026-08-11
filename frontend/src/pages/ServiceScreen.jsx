@@ -29,10 +29,32 @@ export default function ServiceScreen() {
     });
     
     socket.on('order_updated', (updatedOrder) => {
-      setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+      setOrders(prev => {
+        const exists = prev.some(o => o.id === updatedOrder.id);
+        if (exists) {
+          return prev.map(o => o.id === updatedOrder.id ? updatedOrder : o);
+        } else if (updatedOrder.status === 'active') {
+          const newOrders = [...prev, updatedOrder];
+          return newOrders.sort((a, b) => {
+            if (a.priority === b.priority) return new Date(a.createdAt) - new Date(b.createdAt);
+            return a.priority ? -1 : 1;
+          });
+        }
+        return prev;
+      });
     });
 
     socket.on('item_fulfilled', (updatedItem) => {
+      setOrders(prev => prev.map(o => {
+        if (o.id === updatedItem.orderId) {
+          const updatedOrderItems = o.orderItems.map(i => i.id === updatedItem.id ? updatedItem : i);
+          return { ...o, orderItems: updatedOrderItems };
+        }
+        return o;
+      }));
+    });
+
+    socket.on('item_unfulfilled', (updatedItem) => {
       setOrders(prev => prev.map(o => {
         if (o.id === updatedItem.orderId) {
           const updatedOrderItems = o.orderItems.map(i => i.id === updatedItem.id ? updatedItem : i);
@@ -50,6 +72,7 @@ export default function ServiceScreen() {
       socket.off('new_order');
       socket.off('order_updated');
       socket.off('item_fulfilled');
+      socket.off('item_unfulfilled');
       socket.off('order_completed');
     };
   }, [socket]);
@@ -68,6 +91,14 @@ export default function ServiceScreen() {
     socket.emit('fulfill_item', { itemId });
   };
 
+  const unfulfillItem = (itemId) => {
+    socket.emit('unfulfill_item', { itemId });
+  };
+
+  const toggleKitchenItem = (itemId) => {
+    socket.emit('toggle_kitchen_item', { itemId });
+  };
+
   const handleRecallOrder = (orderId) => {
     socket.emit('recall_order', { orderId });
     setHistoryOrders(prev => prev.filter(o => o.id !== orderId));
@@ -83,18 +114,18 @@ export default function ServiceScreen() {
         <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           {entries.map(([groupName, choices]) => (
             <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ fontSize: '0.7rem', color: '#cbd5e1', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {groupName}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                 {choices.map((c, idx) => (
                   <div key={idx} style={{
                     padding: '0.3rem 0.65rem',
-                    background: 'rgba(255,255,255,0.05)',
+                    background: 'rgba(255,255,255,0.08)',
                     borderRadius: 'var(--radius-sm)',
                     fontSize: '0.9rem',
-                    color: 'var(--text-muted)',
-                    borderLeft: '2px solid rgba(139, 92, 246, 0.55)',
+                    color: '#ffffff',
+                    borderLeft: '2px solid rgba(139, 92, 246, 0.7)',
                     fontWeight: '500'
                   }}>
                     {c}
@@ -176,56 +207,115 @@ export default function ServiceScreen() {
               </div>
             
             <div className="ticket-items">
-              {order.orderItems.map(item => (
-                <div 
-                  key={item.id} 
-                  className={`ticket-item ${item.itemStatus === 'fulfilled' ? 'fulfilled' : ''}`}
-                  style={{ 
-                    flexDirection: 'column', 
-                    alignItems: 'stretch',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 'var(--radius-sm)',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
-                      {/* Qty badge */}
-                      <span style={{ 
-                        background: 'var(--primary)', 
-                        color: '#fff', 
-                        fontWeight: '800', 
-                        fontSize: '1.1rem', 
-                        padding: '0.2rem 0.55rem',
-                        borderRadius: 'var(--radius-md)',
-                        boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
-                        flexShrink: 0
-                      }}>
-                        {item.quantity}x
-                      </span>
-                      <span style={{ fontSize: '1.4rem', fontWeight: '800', color: '#ffffff', letterSpacing: '0.01em' }}>
-                        {item.menuItem?.name || 'Unknown'}
-                      </span>
-                    </div>
-                    {item.itemStatus === 'pending' && (
-                      <button 
-                        className="btn btn-primary" 
-                        style={{ 
-                          minHeight: 'var(--touch-min)',
-                          padding: '0 1rem',
-                          fontSize: '0.95rem',
-                          fontWeight: '700',
+              {order.orderItems.map(item => {
+                const isShelfItem = item.menuItem?.requiresCooking === false;
+                const isKitchenReady = item.kitchenItemStatus === 'ready';
+
+                return (
+                  <div 
+                    key={item.id} 
+                    className={`ticket-item ${item.itemStatus === 'fulfilled' ? 'fulfilled' : ''}`}
+                    style={{ 
+                      flexDirection: 'column', 
+                      alignItems: 'stretch',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 'var(--radius-sm)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
+                        {/* Qty badge */}
+                        <span style={{ 
+                          background: 'var(--primary)', 
+                          color: '#fff', 
+                          fontWeight: '800', 
+                          fontSize: '1.1rem', 
+                          padding: '0.2rem 0.55rem',
+                          borderRadius: 'var(--radius-md)',
+                          boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
                           flexShrink: 0
-                        }}
-                        onClick={() => fulfillItem(item.id)}
-                      >
-                        Hand Off
-                      </button>
-                    )}
+                        }}>
+                          {item.quantity}x
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
+                          <span style={{ fontSize: '1.15rem', fontWeight: '500', color: '#ffffff', letterSpacing: '0.01em', lineHeight: '1.2' }}>
+                            {item.menuItem?.name || 'Unknown'}
+                          </span>
+                          <div>
+                            {isShelfItem ? (
+                              <span className="badge badge-shelf" style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem' }}>📦 Shelf Item</span>
+                            ) : (
+                              <span className="badge badge-kitchen" style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem' }}>🍳 Kitchen</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {item.itemStatus === 'pending' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+                          <button 
+                            className={`btn ${isKitchenReady ? 'btn-success' : 'btn-outline'}`} 
+                            style={{ 
+                              minHeight: 'var(--touch-min)',
+                              padding: '0 0.75rem',
+                              fontSize: '0.85rem',
+                              fontWeight: '700',
+                              borderColor: isKitchenReady ? undefined : 'rgba(245, 158, 11, 0.4)',
+                              color: isKitchenReady ? undefined : 'var(--warning)'
+                            }}
+                            title={isKitchenReady ? 'Marked Ready' : 'Mark Ready'}
+                            onClick={() => toggleKitchenItem(item.id)}
+                          >
+                            {isKitchenReady ? '✓ Ready' : 'Mark Ready'}
+                          </button>
+                          <button 
+                            className="btn btn-primary" 
+                            style={{ 
+                              minHeight: 'var(--touch-min)',
+                              padding: '0 0.9rem',
+                              fontSize: '0.95rem',
+                              fontWeight: '700',
+                            }}
+                            onClick={() => fulfillItem(item.id)}
+                          >
+                            Hand Off
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          className="btn btn-outline undo-item-btn" 
+                          title="Undo Hand Off"
+                          aria-label="Undo Hand Off"
+                          style={{ 
+                            width: 'var(--touch-min)',
+                            height: 'var(--touch-min)',
+                            minWidth: 'var(--touch-min)',
+                            minHeight: 'var(--touch-min)',
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 'var(--radius-sm)',
+                            flexShrink: 0,
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            color: '#ffffff',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => unfulfillItem(item.id)}
+                        >
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 7v6h6" />
+                            <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    {renderOptions(item.optionsSnapshot)}
                   </div>
-                  {renderOptions(item.optionsSnapshot)}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

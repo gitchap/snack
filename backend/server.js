@@ -120,8 +120,14 @@ app.delete('/api/admin/categories/:id', authenticateToken, async (req, res) => {
 app.post('/api/admin/menu', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
-    const { name, categoryId } = req.body;
-    const item = await prisma.menuItem.create({ data: { name, categoryId } });
+    const { name, categoryId, requiresCooking } = req.body;
+    const item = await prisma.menuItem.create({
+      data: {
+        name: name.trim(),
+        categoryId: parseInt(categoryId),
+        requiresCooking: requiresCooking !== false
+      }
+    });
     io.emit('menu_updated');
     res.json(item);
   } catch (e) {
@@ -146,13 +152,18 @@ app.delete('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
 app.put('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
-    const { name, categoryId } = req.body;
+    const { name, categoryId, requiresCooking } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Item name is required' });
     if (!categoryId || isNaN(parseInt(categoryId))) return res.status(400).json({ error: 'Valid category is required' });
 
+    const data = { name: name.trim(), categoryId: parseInt(categoryId) };
+    if (typeof requiresCooking === 'boolean') {
+      data.requiresCooking = requiresCooking;
+    }
+
     const item = await prisma.menuItem.update({
       where: { id: parseInt(req.params.itemId) },
-      data: { name: name.trim(), categoryId: parseInt(categoryId) },
+      data,
       include: { options: true }
     });
     io.emit('menu_updated');
@@ -389,12 +400,21 @@ io.on('connection', (socket) => {
     try {
       const updatedItem = await prisma.orderItem.update({
         where: { id: itemId },
-        data: { itemStatus: 'fulfilled' },
+        data: { itemStatus: 'fulfilled', kitchenItemStatus: 'ready' },
         include: { order: { include: { orderItems: true } }, menuItem: true }
       });
       
       io.emit('item_fulfilled', updatedItem);
       
+      // Check if all kitchen items in order are ready
+      const allKitchenReady = updatedItem.order.orderItems.every(i => i.kitchenItemStatus === 'ready' || i.id === itemId);
+      if (allKitchenReady && updatedItem.order.kitchenStatus !== 'ready') {
+        await prisma.order.update({
+          where: { id: updatedItem.orderId },
+          data: { kitchenStatus: 'ready' }
+        });
+      }
+
       // Auto-clear order if all items fulfilled
       const allFulfilled = updatedItem.order.orderItems.every(i => i.itemStatus === 'fulfilled');
       if (allFulfilled) {
@@ -408,9 +428,53 @@ io.on('connection', (socket) => {
           }
         });
         io.emit('order_completed', completedOrder);
+      } else {
+        const fullOrder = await prisma.order.findUnique({
+          where: { id: updatedItem.orderId },
+          include: { orderItems: { include: { menuItem: true } } }
+        });
+        io.emit('order_updated', fullOrder);
       }
     } catch (e) {
       console.error(e);
+    }
+  });
+
+  socket.on('unfulfill_item', async ({ itemId }) => {
+    try {
+      const currentItem = await prisma.orderItem.findUnique({
+        where: { id: itemId },
+        include: { order: true }
+      });
+      if (!currentItem) return;
+
+      const updatedItem = await prisma.orderItem.update({
+        where: { id: itemId },
+        data: { itemStatus: 'pending' },
+        include: { order: { include: { orderItems: true } }, menuItem: true }
+      });
+
+      // If order was completed, revert order status back to active
+      if (currentItem.order.status === 'completed') {
+        const restoredOrder = await prisma.order.update({
+          where: { id: currentItem.orderId },
+          data: { status: 'active' },
+          include: {
+            orderItems: { include: { menuItem: true } }
+          }
+        });
+        io.emit('new_order', restoredOrder);
+        io.emit('order_updated', restoredOrder);
+      } else {
+        io.emit('item_unfulfilled', updatedItem);
+        const fullOrder = await prisma.order.findUnique({
+          where: { id: updatedItem.orderId },
+          include: { orderItems: { include: { menuItem: true } } }
+        });
+        io.emit('order_updated', fullOrder);
+      }
+    } catch (e) {
+      console.error('Error unfulfilling item:', e);
     }
   });
 

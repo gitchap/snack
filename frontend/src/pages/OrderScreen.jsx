@@ -97,18 +97,18 @@ export default function OrderScreen() {
         <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           {entries.map(([groupName, choices]) => (
             <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              <div style={{ fontSize: '0.7rem', color: '#cbd5e1', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {groupName}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                 {choices.map((c, idx) => (
                   <div key={idx} style={{
                     padding: '0.3rem 0.65rem',
-                    background: 'rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.08)',
                     borderRadius: 'var(--radius-sm)',
                     fontSize: '0.9rem',
-                    color: 'var(--text-muted)',
-                    borderLeft: '2px solid rgba(139, 92, 246, 0.55)',
+                    color: '#ffffff',
+                    borderLeft: '2px solid rgba(139, 92, 246, 0.7)',
                     fontWeight: '500'
                   }}>
                     {c}

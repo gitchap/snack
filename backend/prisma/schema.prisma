@@ -26,12 +26,13 @@ model Category {
 }
 
 model MenuItem {
-  id         Int          @id @default(autoincrement())
-  name       String
-  categoryId Int
-  category   Category     @relation(fields: [categoryId], references: [id])
-  options    ItemOption[]
-  orderItems OrderItem[]
+  id              Int          @id @default(autoincrement())
+  name            String
+  requiresCooking Boolean      @default(true)
+  categoryId      Int
+  category        Category     @relation(fields: [categoryId], references: [id])
+  options         ItemOption[]
+  orderItems      OrderItem[]
 }
 
 model ItemOption {

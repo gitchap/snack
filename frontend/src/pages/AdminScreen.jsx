@@ -14,8 +14,13 @@ function MenuItemCard({ item, onClick }) {
       style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', cursor: 'pointer' }}
       onClick={onClick}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
         <strong style={{ fontSize: '1.2rem', color: '#fff' }}>{item.name}</strong>
+        {item.requiresCooking === false ? (
+          <span className="badge badge-shelf">📦 Shelf</span>
+        ) : (
+          <span className="badge badge-kitchen">🍳 Kitchen</span>
+        )}
       </div>
 
       {item.options?.length > 0 && (
@@ -63,6 +68,7 @@ export default function AdminScreen() {
   // Add Item form state
   const [newItemName, setNewItemName] = useState('');
   const [newItemCategoryId, setNewItemCategoryId] = useState('');
+  const [newItemRequiresCooking, setNewItemRequiresCooking] = useState(true);
   const [pendingOptions, setPendingOptions] = useState([]);
   const [newOptName, setNewOptName] = useState('Ingredients');
   const [newOptChoices, setNewOptChoices] = useState('');
@@ -178,7 +184,7 @@ export default function AdminScreen() {
     const res = await fetch('/api/admin/menu', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name: newItemName, categoryId: parseInt(newItemCategoryId) })
+      body: JSON.stringify({ name: newItemName, categoryId: parseInt(newItemCategoryId), requiresCooking: newItemRequiresCooking })
     });
     const item = await res.json();
     for (const opt of pendingOptions) {
@@ -188,7 +194,7 @@ export default function AdminScreen() {
         body: JSON.stringify(opt)
       });
     }
-    setNewItemName(''); setPendingOptions([]);
+    setNewItemName(''); setPendingOptions([]); setNewItemRequiresCooking(true);
     setCreatedItemId(item.id);
     fetchMenu();
     setTimeout(() => setCreatedItemId(null), 3000);
@@ -232,13 +238,51 @@ export default function AdminScreen() {
                 onAddNew={handleCreateCategory}
               />
 
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <label style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: '600' }}>Item Type</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className={`btn ${newItemRequiresCooking ? 'btn-primary' : 'btn-outline'}`}
+                    onClick={() => setNewItemRequiresCooking(true)}
+                    style={{ flex: 1, fontSize: '0.85rem' }}
+                  >
+                    🍳 Kitchen Prep
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${!newItemRequiresCooking ? 'btn-primary' : 'btn-outline'}`}
+                    onClick={() => setNewItemRequiresCooking(false)}
+                    style={{ flex: 1, fontSize: '0.85rem' }}
+                  >
+                    📦 Shelf / Grab & Go
+                  </button>
+                </div>
+              </div>
+
               {pendingOptions.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                   {pendingOptions.map((o, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 0.75rem', background: 'rgba(0,0,0,0.15)', borderRadius: 'var(--radius-sm)' }}>
                       <span><strong>{o.name}</strong>: {o.choices}</span>
                       <span style={{ color: o.defaultOn ? 'var(--success)' : 'var(--warning)', fontWeight: '600', marginLeft: '0.5rem' }}>{o.defaultOn ? 'ON' : 'OFF'}</span>
-                      <button type="button" style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem', marginLeft: '0.5rem' }} onClick={() => setPendingOptions(prev => prev.filter((_, j) => j !== i))}>×</button>
+                      <button 
+                        type="button" 
+                        className="btn btn-outline" 
+                        style={{ 
+                          minWidth: 'var(--touch-min)', 
+                          minHeight: 'var(--touch-min)', 
+                          padding: 0, 
+                          borderRadius: 'var(--radius-sm)', 
+                          color: 'var(--danger)', 
+                          borderColor: 'rgba(239, 68, 68, 0.3)', 
+                          marginLeft: '0.5rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }} 
+                        onClick={() => setPendingOptions(prev => prev.filter((_, j) => j !== i))}
+                      >×</button>
                     </div>
                   ))}
                 </div>
