@@ -166,7 +166,7 @@ app.put('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
 app.post('/api/admin/menu/:itemId/options', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
-    const { name, choices, defaultOn } = req.body;
+    const { name, choices, defaultOn, required } = req.body;
     if (!choices || !choices.trim()) return res.status(400).json({ error: 'Option choices are required' });
 
     const option = await prisma.itemOption.create({
@@ -174,7 +174,8 @@ app.post('/api/admin/menu/:itemId/options', authenticateToken, async (req, res) 
         menuItemId: parseInt(req.params.itemId),
         name: (name || 'Ingredients').trim(),
         choices: choices.trim(),
-        defaultOn: defaultOn !== false
+        defaultOn: defaultOn !== false,
+        required: required === true
       }
     });
     io.emit('menu_updated');
@@ -188,13 +189,18 @@ app.post('/api/admin/menu/:itemId/options', authenticateToken, async (req, res) 
 app.put('/api/admin/options/:optionId', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
-    const { name, choices, defaultOn } = req.body;
+    const { name, choices, defaultOn, required } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Option group name is required' });
     if (!choices || !choices.trim()) return res.status(400).json({ error: 'Option choices are required' });
 
     const option = await prisma.itemOption.update({
       where: { id: parseInt(req.params.optionId) },
-      data: { name: name.trim(), choices: choices.trim(), defaultOn: defaultOn !== false }
+      data: {
+        name: name.trim(),
+        choices: choices.trim(),
+        defaultOn: defaultOn !== false,
+        required: required === true
+      }
     });
     io.emit('menu_updated');
     res.json(option);

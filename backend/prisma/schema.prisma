@@ -39,6 +39,7 @@ model ItemOption {
   name       String   // e.g., "Ingredients", "Extras"
   choices    String   // comma-separated values like "Lettuce,Tomato,Mayo"
   defaultOn  Boolean  @default(true) // true = all choices selected by default, false = none selected
+  required   Boolean  @default(false) // true = at least 1 choice must be selected
   menuItemId Int
   menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
 }

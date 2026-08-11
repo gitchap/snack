@@ -67,6 +67,7 @@ export default function AdminScreen() {
   const [newOptName, setNewOptName] = useState('Ingredients');
   const [newOptChoices, setNewOptChoices] = useState('');
   const [newOptDefaultOn, setNewOptDefaultOn] = useState(true);
+  const [newOptRequired, setNewOptRequired] = useState(false);
   const [createdItemId, setCreatedItemId] = useState(null);
 
   // Currently editing item (modal state)
@@ -166,9 +167,10 @@ export default function AdminScreen() {
   const addPendingOption = (e) => {
     e.preventDefault();
     if (!newOptChoices.trim()) return;
-    setPendingOptions(prev => [...prev, { name: newOptName, choices: newOptChoices.trim(), defaultOn: newOptDefaultOn }]);
+    setPendingOptions(prev => [...prev, { name: newOptName, choices: newOptChoices.trim(), defaultOn: newOptDefaultOn, required: newOptRequired }]);
     setNewOptChoices('');
     setNewOptDefaultOn(true);
+    setNewOptRequired(false);
   };
 
   const handleAddItem = async (e) => {
@@ -249,6 +251,10 @@ export default function AdminScreen() {
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
                   <input type="checkbox" style={{ width: '16px', height: '16px' }} checked={newOptDefaultOn} onChange={e => setNewOptDefaultOn(e.target.checked)} />
                   Default ON (pre-selected when ordering)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                  <input type="checkbox" style={{ width: '16px', height: '16px' }} checked={newOptRequired} onChange={e => setNewOptRequired(e.target.checked)} />
+                  Required (At least 1 choice must be selected)
                 </label>
                 <button type="button" className="btn btn-outline" onClick={addPendingOption}>Save Group</button>
               </div>

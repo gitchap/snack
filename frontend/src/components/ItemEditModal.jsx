@@ -13,16 +13,17 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
     setOptions(item.options || []);
   }, [item]);
 
-  // New option state inside modal
   const [newOptName, setNewOptName] = useState('Ingredients');
   const [newOptChoices, setNewOptChoices] = useState('');
   const [newOptDefaultOn, setNewOptDefaultOn] = useState(true);
+  const [newOptRequired, setNewOptRequired] = useState(false);
 
   // Option edit state
   const [editingOptId, setEditingOptId] = useState(null);
   const [editOptName, setEditOptName] = useState('');
   const [editOptChoices, setEditOptChoices] = useState('');
   const [editOptDefaultOn, setEditOptDefaultOn] = useState(true);
+  const [editOptRequired, setEditOptRequired] = useState(false);
 
   const getAuthToken = () => token || localStorage.getItem('token');
 
@@ -111,12 +112,13 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
       const res = await fetch(`/api/admin/menu/${item.id}/options`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ name: newOptName.trim(), choices: newOptChoices.trim(), defaultOn: newOptDefaultOn })
+        body: JSON.stringify({ name: newOptName.trim(), choices: newOptChoices.trim(), defaultOn: newOptDefaultOn, required: newOptRequired })
       });
       if (res.ok) {
         const createdOpt = await res.json();
         setOptions(prev => [...prev, createdOpt]);
         setNewOptChoices('');
+        setNewOptRequired(false);
         await onSaved();
         return true;
       } else {
@@ -141,6 +143,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
     setEditOptName(opt.name);
     setEditOptChoices(opt.choices);
     setEditOptDefaultOn(opt.defaultOn !== false);
+    setEditOptRequired(opt.required === true);
   };
 
   const handleSaveOpt = async (optId) => {
@@ -153,7 +156,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
       const res = await fetch(`/api/admin/options/${optId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ name: editOptName.trim(), choices: editOptChoices.trim(), defaultOn: editOptDefaultOn })
+        body: JSON.stringify({ name: editOptName.trim(), choices: editOptChoices.trim(), defaultOn: editOptDefaultOn, required: editOptRequired })
       });
       if (res.ok) {
         const updatedOpt = await res.json();
@@ -250,6 +253,10 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
                           <input type="checkbox" checked={editOptDefaultOn} onChange={e => setEditOptDefaultOn(e.target.checked)} style={{ width: '16px', height: '16px' }} />
                           Default ON (pre-selected when ordering)
                         </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>
+                          <input type="checkbox" checked={editOptRequired} onChange={e => setEditOptRequired(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                          Required (At least 1 choice must be selected)
+                        </label>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button className="btn btn-success" style={{ flex: 1 }} onClick={() => handleSaveOpt(opt.id)}>Save Group</button>
                           <button className="btn btn-outline" onClick={() => setEditingOptId(null)}>Cancel</button>
@@ -262,8 +269,15 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
                     <div key={opt.id} style={{ background: 'rgba(255,255,255,0.04)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <strong>{opt.name}:</strong> <span style={{ color: 'var(--text-muted)' }}>{opt.choices}</span>
-                        <div style={{ fontSize: '0.85rem', color: opt.defaultOn !== false ? 'var(--success)' : 'var(--warning)', marginTop: '0.2rem' }}>
-                          {opt.defaultOn !== false ? '● Default ON' : '○ Default OFF'}
+                        <div style={{ fontSize: '0.85rem', display: 'flex', gap: '0.75rem', marginTop: '0.2rem' }}>
+                          <span style={{ color: opt.defaultOn !== false ? 'var(--success)' : 'var(--warning)' }}>
+                            {opt.defaultOn !== false ? '● Default ON' : '○ Default OFF'}
+                          </span>
+                          {opt.required && (
+                            <span style={{ color: 'var(--danger)', fontWeight: '600' }}>
+                              ● Required (Min 1)
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -287,6 +301,10 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>
               <input type="checkbox" checked={newOptDefaultOn} onChange={e => setNewOptDefaultOn(e.target.checked)} style={{ width: '16px', height: '16px' }} />
               Default ON (pre-selected when ordering)
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>
+              <input type="checkbox" checked={newOptRequired} onChange={e => setNewOptRequired(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+              Required (At least 1 choice must be selected)
             </label>
             <button type="submit" className="btn btn-outline">Save Group</button>
           </form>

@@ -24,6 +24,14 @@ export default function ItemCustomizerModal({ item, onClose, onConfirm }) {
     });
   };
 
+  const unfulfilledRequired = item.options?.filter(opt => {
+    if (!opt.required) return false;
+    const current = selections[opt.name] || [];
+    return current.length === 0;
+  }) || [];
+
+  const isValid = unfulfilledRequired.length === 0;
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="glass glass-card modal-content" onClick={e => e.stopPropagation()}>
@@ -35,12 +43,27 @@ export default function ItemCustomizerModal({ item, onClose, onConfirm }) {
           {item.options?.map(opt => {
             const choices = opt.choices.split(',').map(c => c.trim()).filter(Boolean);
             const currentSelected = selections[opt.name] || [];
-            const label = opt.defaultOn !== false ? 'Remove to customize' : 'Add extras';
+            const isReq = opt.required === true;
+            const isMissing = isReq && currentSelected.length === 0;
+            const label = isReq 
+              ? (isMissing ? '● Required (Select at least 1)' : '✓ Selection made')
+              : (opt.defaultOn !== false ? 'Remove to customize' : 'Add extras');
+
             return (
-              <div key={opt.id}>
+              <div key={opt.id} style={{ 
+                background: isMissing ? 'rgba(245, 158, 11, 0.06)' : 'transparent',
+                padding: isMissing ? '0.75rem' : '0',
+                borderRadius: 'var(--radius-sm)',
+                border: isMissing ? '1px dashed rgba(245, 158, 11, 0.4)' : 'none',
+                transition: 'all 0.2s ease'
+              }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
-                  <h3 style={{ margin: 0 }}>{opt.name}</h3>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</span>
+                  <h3 style={{ margin: 0, color: isMissing ? 'var(--warning)' : 'var(--text-main)' }}>
+                    {opt.name} {isReq && <span style={{ color: 'var(--danger)', fontSize: '1rem' }}>*</span>}
+                  </h3>
+                  <span style={{ fontSize: '0.85rem', fontWeight: isReq ? '700' : '500', color: isMissing ? 'var(--warning)' : 'var(--text-muted)' }}>
+                    {label}
+                  </span>
                 </div>
                 <div className="chip-container">
                   {choices.map(choice => {
@@ -63,7 +86,16 @@ export default function ItemCustomizerModal({ item, onClose, onConfirm }) {
 
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn btn-outline" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
-          <button className="btn btn-success" style={{ flex: 2 }} onClick={() => onConfirm(selections)}>Add to Order</button>
+          <button 
+            className="btn btn-success" 
+            style={{ flex: 2, opacity: isValid ? 1 : 0.6, cursor: isValid ? 'pointer' : 'not-allowed' }} 
+            disabled={!isValid}
+            onClick={() => {
+              if (isValid) onConfirm(selections);
+            }}
+          >
+            {isValid ? 'Add to Order' : `Select ${unfulfilledRequired[0]?.name}`}
+          </button>
         </div>
       </div>
     </div>
