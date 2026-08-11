@@ -1,8 +1,10 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
+import useFavicon from '../hooks/useFavicon';
 
 export default function LoginScreen() {
+  useFavicon('order.png', 'Login - Snack Shack');
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');

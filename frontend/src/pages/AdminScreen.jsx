@@ -3,6 +3,7 @@ import { AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import ItemEditModal from '../components/ItemEditModal';
 import CustomSelect from '../components/CustomSelect';
+import useFavicon from '../hooks/useFavicon';
 
 // ─── Menu Item Card (clean view only, click opens modal) ────────────────────
 function MenuItemCard({ item, onClick }) {
@@ -45,6 +46,7 @@ function MenuItemCard({ item, onClick }) {
 
 // ─── Main Admin Screen ───────────────────────────────────────────────────────
 export default function AdminScreen() {
+  useFavicon('admin.png', 'Admin Panel - Snack Shack');
   const { token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 

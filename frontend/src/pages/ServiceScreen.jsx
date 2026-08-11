@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { SocketContext, AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
+import useFavicon from '../hooks/useFavicon';
 
 export default function ServiceScreen() {
+  useFavicon('service.png', 'Service Display - Snack Shack');
   const socket = useContext(SocketContext);
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();

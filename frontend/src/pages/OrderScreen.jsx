@@ -2,8 +2,10 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { SocketContext, AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import ItemCustomizerModal from '../components/ItemCustomizerModal';
+import useFavicon from '../hooks/useFavicon';
 
 export default function OrderScreen() {
+  useFavicon('order.png', 'Order Kiosk - Snack Shack');
   const socket = useContext(SocketContext);
   const { logout, role } = useContext(AuthContext);
   const navigate = useNavigate();
