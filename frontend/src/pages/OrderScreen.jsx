@@ -92,15 +92,15 @@ export default function OrderScreen() {
       const entries = Object.entries(parsed).filter(([_, val]) => Array.isArray(val) && val.length > 0);
       if (entries.length === 0) return null;
       return (
-        <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+        <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {entries.map(([groupName, choices]) => (
-            <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {groupName}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                 {choices.map((c, idx) => (
-                  <div key={idx} className="option-line" style={{ padding: '0.35rem 0.65rem', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', fontSize: '0.95rem', color: '#a7f3d0', borderLeft: '4px solid var(--primary)', fontWeight: '600' }}>
+                  <div key={idx} className="option-chip" style={{ padding: '0.25rem 0.55rem', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', fontSize: '0.9rem', color: '#a7f3d0', borderLeft: '3px solid var(--primary)', fontWeight: '600' }}>
                     {c}
                   </div>
                 ))}
