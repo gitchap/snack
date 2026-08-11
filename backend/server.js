@@ -147,9 +147,12 @@ app.put('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
     const { name, categoryId } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Item name is required' });
+    if (!categoryId || isNaN(parseInt(categoryId))) return res.status(400).json({ error: 'Valid category is required' });
+
     const item = await prisma.menuItem.update({
       where: { id: parseInt(req.params.itemId) },
-      data: { name, categoryId: parseInt(categoryId) },
+      data: { name: name.trim(), categoryId: parseInt(categoryId) },
       include: { options: true }
     });
     io.emit('menu_updated');
@@ -164,11 +167,13 @@ app.post('/api/admin/menu/:itemId/options', authenticateToken, async (req, res) 
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
     const { name, choices, defaultOn } = req.body;
+    if (!choices || !choices.trim()) return res.status(400).json({ error: 'Option choices are required' });
+
     const option = await prisma.itemOption.create({
       data: {
         menuItemId: parseInt(req.params.itemId),
-        name,
-        choices,
+        name: (name || 'Ingredients').trim(),
+        choices: choices.trim(),
         defaultOn: defaultOn !== false
       }
     });
@@ -184,9 +189,12 @@ app.put('/api/admin/options/:optionId', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
     const { name, choices, defaultOn } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Option group name is required' });
+    if (!choices || !choices.trim()) return res.status(400).json({ error: 'Option choices are required' });
+
     const option = await prisma.itemOption.update({
       where: { id: parseInt(req.params.optionId) },
-      data: { name, choices, defaultOn }
+      data: { name: name.trim(), choices: choices.trim(), defaultOn: defaultOn !== false }
     });
     io.emit('menu_updated');
     res.json(option);
