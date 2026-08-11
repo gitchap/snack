@@ -105,26 +105,36 @@ export default function KitchenScreen() {
                 boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 16px rgba(139, 92, 246, 0.35)' : undefined
               }}
             >
-              <div className="ticket-header">
-                <div>
-                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.35rem' }}>
-                    <span 
-                      style={{ 
-                        fontSize: '0.85rem', 
-                        padding: '0.2rem 0.5rem', 
-                        borderRadius: '4px', 
-                        background: isFirstInQueue ? 'var(--primary)' : 'rgba(255,255,255,0.12)', 
-                        color: '#fff',
-                        fontWeight: '800'
-                      }}
-                    >
-                      #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
-                    </span>
-                    {order.customerName || formatTicketCode(order.orderNumber)}
-                    {order.priority && <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem', padding: '0.15rem 0.5rem' }}>🔥 Priority</span>}
-                  </h3>
-                  {order.customerName && <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.25rem' }}>{formatTicketCode(order.orderNumber)}</div>}
+              <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  <span 
+                    style={{ 
+                      fontSize: '0.85rem', 
+                      padding: '0.25rem 0.55rem', 
+                      borderRadius: '6px', 
+                      background: isFirstInQueue ? 'var(--primary)' : 'rgba(255,255,255,0.12)', 
+                      color: '#fff',
+                      fontWeight: '800',
+                      flexShrink: 0,
+                      marginTop: '0.15rem'
+                    }}
+                  >
+                    #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
+                  </span>
+
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.35rem', lineHeight: '1.2' }}>
+                      {order.customerName || formatTicketCode(order.orderNumber)}
+                      {order.priority && <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem', padding: '0.15rem 0.5rem' }}>🔥 Priority</span>}
+                    </h3>
+                    {order.customerName && (
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.2rem', fontWeight: '500' }}>
+                        {formatTicketCode(order.orderNumber)}
+                      </div>
+                    )}
+                  </div>
                 </div>
+
                 {order.kitchenStatus === 'pending' ? (
                   <span className="badge badge-pending">Cooking</span>
                 ) : (
