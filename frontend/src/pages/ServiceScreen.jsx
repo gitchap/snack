@@ -94,14 +94,14 @@ export default function ServiceScreen() {
       
       <div className="main-content service-grid">
         {orders.map(order => (
-          <div key={order.id} className="glass glass-card ticket">
+          <div key={order.id} className={`glass glass-card ticket ${order.kitchenStatus === 'ready' ? 'ticket-ready' : 'ticket-pending'}`}>
             <div className="ticket-header">
               <div>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-                  Order #{order.orderNumber}
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.35rem' }}>
+                  {order.customerName || `Order #${order.orderNumber}`}
                   {order.priority && <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem', padding: '0.15rem 0.5rem' }}>🔥 Priority</span>}
                 </h3>
-                {order.customerName && <div style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginTop: '0.35rem' }}>{order.customerName}</div>}
+                {order.customerName && <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.25rem' }}>Order #{order.orderNumber}</div>}
               </div>
               {order.kitchenStatus === 'pending' ? (
                 <span className="badge badge-pending">Kitchen Prep</span>

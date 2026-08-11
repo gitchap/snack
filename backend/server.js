@@ -299,6 +299,41 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('toggle_kitchen_item', async ({ itemId }) => {
+    try {
+      const currentItem = await prisma.orderItem.findUnique({ where: { id: itemId } });
+      if (!currentItem) return;
+      const nextStatus = currentItem.kitchenItemStatus === 'ready' ? 'pending' : 'ready';
+
+      const updatedItem = await prisma.orderItem.update({
+        where: { id: itemId },
+        data: { kitchenItemStatus: nextStatus },
+        include: { order: { include: { orderItems: true } }, menuItem: true }
+      });
+
+      // Auto-set whole ticket to ready if all items are marked ready by kitchen
+      const allKitchenReady = updatedItem.order.orderItems.every(i => i.kitchenItemStatus === 'ready');
+      if (allKitchenReady && updatedItem.order.kitchenStatus !== 'ready') {
+        const updatedOrder = await prisma.order.update({
+          where: { id: updatedItem.orderId },
+          data: { kitchenStatus: 'ready' },
+          include: {
+            orderItems: { include: { menuItem: true } }
+          }
+        });
+        io.emit('order_updated', updatedOrder);
+      } else {
+        const fullOrder = await prisma.order.findUnique({
+          where: { id: updatedItem.orderId },
+          include: { orderItems: { include: { menuItem: true } } }
+        });
+        io.emit('order_updated', fullOrder);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
   socket.on('fulfill_item', async ({ itemId }) => {
     try {
       const updatedItem = await prisma.orderItem.update({

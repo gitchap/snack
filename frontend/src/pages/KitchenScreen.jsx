@@ -42,6 +42,10 @@ export default function KitchenScreen() {
     socket.emit('update_kitchen_status', { orderId, status: 'ready' });
   };
 
+  const toggleKitchenItem = (itemId) => {
+    socket.emit('toggle_kitchen_item', { itemId });
+  };
+
   const renderOptions = (optionsSnapshot) => {
     if (!optionsSnapshot) return null;
     try {
@@ -83,31 +87,53 @@ export default function KitchenScreen() {
       
       <div className="main-content kitchen-grid">
         {orders.map(order => (
-          <div key={order.id} className="glass glass-card ticket">
+          <div key={order.id} className={`glass glass-card ticket ${order.kitchenStatus === 'ready' ? 'ticket-ready' : 'ticket-pending'}`}>
             <div className="ticket-header">
               <div>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-                  Order #{order.orderNumber}
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.35rem' }}>
+                  {order.customerName || `Order #${order.orderNumber}`}
                   {order.priority && <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem', padding: '0.15rem 0.5rem' }}>🔥 Priority</span>}
                 </h3>
-                {order.customerName && <div style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginTop: '0.35rem' }}>{order.customerName}</div>}
+                {order.customerName && <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.25rem' }}>Order #{order.orderNumber}</div>}
               </div>
               {order.kitchenStatus === 'pending' ? (
                 <span className="badge badge-pending">Cooking</span>
               ) : (
-                <span className="badge badge-ready">Ready</span>
+                <span className="badge badge-ready">Food Ready</span>
               )}
             </div>
             
             <div className="ticket-items">
-              {order.orderItems.map(item => (
-                <div key={item.id} className="ticket-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                    <span>{item.quantity}x {item.menuItem?.name || 'Unknown Item'}</span>
+              {order.orderItems.map(item => {
+                const isReady = item.kitchenItemStatus === 'ready';
+                return (
+                  <div 
+                    key={item.id} 
+                    className="ticket-item" 
+                    style={{ 
+                      flexDirection: 'column', 
+                      alignItems: 'flex-start',
+                      background: isReady ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255,255,255,0.03)',
+                      border: isReady ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid transparent',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontWeight: 'bold', fontSize: '1.1rem', alignItems: 'center' }}>
+                      <span style={{ textDecoration: isReady ? 'line-through' : 'none', opacity: isReady ? 0.75 : 1 }}>
+                        {item.quantity}x {item.menuItem?.name || 'Unknown Item'}
+                      </span>
+                      <button 
+                        className={`btn ${isReady ? 'btn-success' : 'btn-outline'}`} 
+                        style={{ padding: '0.25rem 0.6rem', fontSize: '0.85rem', cursor: 'pointer' }}
+                        onClick={() => toggleKitchenItem(item.id)}
+                      >
+                        {isReady ? '✓ Ready' : 'Prep'}
+                      </button>
+                    </div>
+                    {renderOptions(item.optionsSnapshot)}
                   </div>
-                  {renderOptions(item.optionsSnapshot)}
-                </div>
-              ))}
+                );
+              })}
             </div>
             
             {order.kitchenStatus === 'pending' && (
