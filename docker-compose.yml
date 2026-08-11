@@ -5,5 +5,5 @@ services:
     ports:
       - "3005:3005"
     volumes:
-      - ./backend/dev.db:/app/backend/dev.db
+      - ./backend/prisma/dev.db:/app/backend/prisma/dev.db
     restart: unless-stopped
