@@ -24,35 +24,55 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
   const [editOptChoices, setEditOptChoices] = useState('');
   const [editOptDefaultOn, setEditOptDefaultOn] = useState(true);
 
+  const getAuthToken = () => token || localStorage.getItem('token');
+
+  const parseErrorMessage = async (res) => {
+    try {
+      const text = await res.text();
+      try {
+        const err = JSON.parse(text);
+        if (err.error) return err.error;
+        if (err.message) return err.message;
+      } catch (_) {}
+      return text || res.statusText || `Status ${res.status}`;
+    } catch (_) {
+      return res.statusText || `Status ${res.status}`;
+    }
+  };
+
   const handleSaveItem = async () => {
     if (!name.trim()) {
       alert('Item name cannot be empty.');
       return;
     }
+    const authToken = getAuthToken();
     try {
       // 1. If user is currently editing an option group inline, save that group first
       if (editingOptId) {
-        await handleSaveOpt(editingOptId);
+        const ok = await handleSaveOpt(editingOptId);
+        if (!ok) return;
       }
 
       // 2. If user filled out new option choices, save that new option group first
       if (newOptChoices.trim()) {
-        await handleAddOptionSubmit();
+        const ok = await handleAddOptionSubmit();
+        if (!ok) return;
       }
 
       // 3. Save Item Name & Category
+      const targetCatId = parseInt(categoryId) || parseInt(item.categoryId);
       const res = await fetch(`/api/admin/menu/${item.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ name: name.trim(), categoryId: parseInt(categoryId) })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ name: name.trim(), categoryId: targetCatId })
       });
 
       if (res.ok) {
         await onSaved();
         onClose();
       } else {
-        const err = await res.json().catch(() => ({}));
-        alert('Failed to save item changes: ' + (err.error || res.statusText));
+        const errMsg = await parseErrorMessage(res);
+        alert(`Failed to save item: ${errMsg}`);
       }
     } catch (e) {
       console.error(e);
@@ -62,17 +82,18 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
 
   const handleDeleteItem = async () => {
     if (!window.confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
+    const authToken = getAuthToken();
     try {
       const res = await fetch(`/api/admin/menu/${item.id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${authToken}` }
       });
       if (res.ok) {
         await onSaved();
         onClose();
       } else {
-        const err = await res.json().catch(() => ({}));
-        alert('Failed to delete item: ' + (err.error || res.statusText));
+        const errMsg = await parseErrorMessage(res);
+        alert(`Failed to delete item: ${errMsg}`);
       }
     } catch (e) {
       console.error(e);
@@ -81,11 +102,12 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
   };
 
   const handleAddOptionSubmit = async () => {
-    if (!newOptChoices.trim()) return;
+    if (!newOptChoices.trim()) return false;
+    const authToken = getAuthToken();
     try {
       const res = await fetch(`/api/admin/menu/${item.id}/options`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ name: newOptName.trim(), choices: newOptChoices.trim(), defaultOn: newOptDefaultOn })
       });
       if (res.ok) {
@@ -93,13 +115,16 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
         setOptions(prev => [...prev, createdOpt]);
         setNewOptChoices('');
         await onSaved();
+        return true;
       } else {
-        const err = await res.json().catch(() => ({}));
-        alert('Failed to add option group: ' + (err.error || res.statusText));
+        const errMsg = await parseErrorMessage(res);
+        alert(`Failed to add option group: ${errMsg}`);
+        return false;
       }
     } catch (e) {
       console.error(e);
       alert('Error adding option group: ' + e.message);
+      return false;
     }
   };
 
@@ -118,12 +143,13 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
   const handleSaveOpt = async (optId) => {
     if (!editOptName.trim() || !editOptChoices.trim()) {
       alert('Option group name and choices cannot be empty.');
-      return;
+      return false;
     }
+    const authToken = getAuthToken();
     try {
       const res = await fetch(`/api/admin/options/${optId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ name: editOptName.trim(), choices: editOptChoices.trim(), defaultOn: editOptDefaultOn })
       });
       if (res.ok) {
@@ -131,29 +157,33 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
         setOptions(prev => prev.map(o => o.id === optId ? updatedOpt : o));
         setEditingOptId(null);
         await onSaved();
+        return true;
       } else {
-        const err = await res.json().catch(() => ({}));
-        alert('Failed to update option group: ' + (err.error || res.statusText));
+        const errMsg = await parseErrorMessage(res);
+        alert(`Failed to update option group: ${errMsg}`);
+        return false;
       }
     } catch (e) {
       console.error(e);
       alert('Error updating option group: ' + e.message);
+      return false;
     }
   };
 
   const handleDeleteOpt = async (optId) => {
     if (!window.confirm('Delete this option group?')) return;
+    const authToken = getAuthToken();
     try {
       const res = await fetch(`/api/admin/options/${optId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${authToken}` }
       });
       if (res.ok) {
         setOptions(prev => prev.filter(o => o.id !== optId));
         await onSaved();
       } else {
-        const err = await res.json().catch(() => ({}));
-        alert('Failed to delete option group: ' + (err.error || res.statusText));
+        const errMsg = await parseErrorMessage(res);
+        alert(`Failed to delete option group: ${errMsg}`);
       }
     } catch (e) {
       console.error(e);
@@ -162,9 +192,10 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
   };
 
   const handleCreateCategory = async (catName) => {
+    const authToken = getAuthToken();
     const res = await fetch('/api/admin/categories', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
       body: JSON.stringify({ name: catName })
     });
     if (res.ok) {
