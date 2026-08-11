@@ -79,15 +79,15 @@ export default function ServiceScreen() {
       const entries = Object.entries(parsed).filter(([_, val]) => Array.isArray(val) && val.length > 0);
       if (entries.length === 0) return null;
       return (
-        <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+        <div className="options-list" style={{ marginTop: '0.4rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
           {entries.map(([groupName, choices]) => (
-            <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {groupName}
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                 {choices.map((c, idx) => (
-                  <div key={idx} className="option-chip" style={{ padding: '0.35rem 0.65rem', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', fontSize: '1rem', color: '#a7f3d0', borderLeft: '3px solid var(--primary)', fontWeight: '600' }}>
+                  <div key={idx} className="option-chip" style={{ padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '5px', fontSize: '0.88rem', color: '#cbd5e1', borderLeft: '2px solid rgba(139, 92, 246, 0.6)', fontWeight: '500' }}>
                     {c}
                   </div>
                 ))}
@@ -135,12 +135,36 @@ export default function ServiceScreen() {
                 <div 
                   key={item.id} 
                   className={`ticket-item ${item.itemStatus === 'fulfilled' ? 'fulfilled' : ''}`}
-                  style={{ flexDirection: 'column', alignItems: 'stretch' }}
+                  style={{ 
+                    flexDirection: 'column', 
+                    alignItems: 'stretch',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    padding: '0.75rem',
+                    borderRadius: 'var(--radius-sm)',
+                    marginBottom: '0.5rem'
+                  }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{item.quantity}x {item.menuItem?.name || 'Unknown'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <span style={{ 
+                        background: 'var(--primary)', 
+                        color: '#fff', 
+                        fontWeight: '800', 
+                        fontSize: '1.15rem', 
+                        padding: '0.2rem 0.55rem', 
+                        borderRadius: '6px',
+                        boxShadow: '0 2px 6px rgba(139, 92, 246, 0.4)',
+                        flexShrink: 0
+                      }}>
+                        {item.quantity}x
+                      </span>
+                      <span style={{ fontSize: '1.4rem', fontWeight: '800', color: '#ffffff', letterSpacing: '0.01em' }}>
+                        {item.menuItem?.name || 'Unknown'}
+                      </span>
+                    </div>
                     {item.itemStatus === 'pending' && (
-                      <button className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.875rem' }} onClick={() => fulfillItem(item.id)}>
+                      <button className="btn btn-primary" style={{ padding: '0.3rem 0.75rem', fontSize: '0.9rem', fontWeight: 'bold' }} onClick={() => fulfillItem(item.id)}>
                         Hand Off
                       </button>
                     )}
