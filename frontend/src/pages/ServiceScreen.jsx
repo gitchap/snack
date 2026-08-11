@@ -133,7 +133,7 @@ export default function ServiceScreen() {
                 boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 16px rgba(139, 92, 246, 0.35)' : undefined
               }}
             >
-              <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: order.customerName ? '0.25rem' : '0.55rem' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 0 }}>
                   {/* Column 1: Queue Badge */}
                   <span style={{ 
