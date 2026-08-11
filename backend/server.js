@@ -241,6 +241,37 @@ app.get('/api/orders/active', async (req, res) => {
   res.json(orders);
 });
 
+// Get Order History (completed/cancelled orders or search)
+app.get('/api/orders/history', async (req, res) => {
+  try {
+    const { search, limit } = req.query;
+    const where = {
+      status: { in: ['completed', 'cancelled'] }
+    };
+    if (search && search.trim()) {
+      const q = search.trim();
+      const num = parseInt(q);
+      where.OR = [
+        { customerName: { contains: q } },
+        !isNaN(num) ? { orderNumber: num } : undefined
+      ].filter(Boolean);
+    }
+    const orders = await prisma.order.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: limit ? parseInt(limit) : 50,
+      include: {
+        orderItems: {
+          include: { menuItem: true }
+        }
+      }
+    });
+    res.json(orders);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // --- Socket.IO ---
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
@@ -366,6 +397,40 @@ io.on('connection', (socket) => {
       }
     } catch (e) {
       console.error(e);
+    }
+  });
+
+  socket.on('recall_order', async ({ orderId }) => {
+    try {
+      await prisma.order.update({
+        where: { id: parseInt(orderId) },
+        data: { 
+          status: 'active',
+          kitchenStatus: 'pending'
+        }
+      });
+
+      await prisma.orderItem.updateMany({
+        where: { orderId: parseInt(orderId) },
+        data: { 
+          itemStatus: 'pending',
+          kitchenItemStatus: 'pending'
+        }
+      });
+
+      const recalledOrder = await prisma.order.findUnique({
+        where: { id: parseInt(orderId) },
+        include: {
+          orderItems: {
+            include: { menuItem: true }
+          }
+        }
+      });
+
+      io.emit('new_order', recalledOrder);
+      io.emit('order_recalled', recalledOrder);
+    } catch (e) {
+      console.error('Error recalling order:', e);
     }
   });
 

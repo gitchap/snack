@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../App';
+import { AuthContext, SocketContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import ItemEditModal from '../components/ItemEditModal';
 import CustomSelect from '../components/CustomSelect';
@@ -48,11 +48,16 @@ function MenuItemCard({ item, onClick }) {
 export default function AdminScreen() {
   useFavicon('admin.png', 'Admin Panel - Snack Shack');
   const { token, logout } = useContext(AuthContext);
+  const socket = useContext(SocketContext);
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('menu');
   const [categories, setCategories] = useState([]);
   const [users, setUsers] = useState([]);
+
+  // Order History state
+  const [historyOrders, setHistoryOrders] = useState([]);
+  const [historySearch, setHistorySearch] = useState('');
 
   // Add Item form state
   const [newItemName, setNewItemName] = useState('');
@@ -72,6 +77,24 @@ export default function AdminScreen() {
   const [pinMessage, setPinMessage] = useState('');
 
   useEffect(() => { fetchMenu(); fetchUsers(); }, []);
+
+  const fetchHistory = async (searchQuery = historySearch) => {
+    try {
+      const url = `/api/orders/history${searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : ''}`;
+      const r = await fetch(url);
+      const data = await r.json();
+      if (Array.isArray(data)) setHistoryOrders(data);
+    } catch (e) {
+      console.error('Error fetching order history:', e);
+    }
+  };
+
+  const handleRecallOrder = (orderId) => {
+    if (socket) {
+      socket.emit('recall_order', { orderId });
+      setTimeout(() => fetchHistory(), 300);
+    }
+  };
 
   // Category management state
   const [editingCatId, setEditingCatId] = useState(null);
@@ -184,6 +207,7 @@ export default function AdminScreen() {
         <h2>Admin Panel</h2>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className={`btn ${activeTab === 'menu' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('menu')}>Menu</button>
+          <button className={`btn ${activeTab === 'history' ? 'btn-primary' : 'btn-outline'}`} onClick={() => { setActiveTab('history'); fetchHistory(); }}>Order History</button>
           <button className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('users')}>User PINs</button>
           <button className="btn btn-outline" onClick={() => navigate('/order')}>Kiosk</button>
           <button className="btn btn-outline" onClick={logout}>Logout</button>
@@ -279,6 +303,64 @@ export default function AdminScreen() {
             ))}
           </div>
 
+        </div>
+      )}
+
+      {/* Order History Tab */}
+      {activeTab === 'history' && (
+        <div className="main-content" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '0.75rem', overflowY: 'auto' }}>
+          <div className="glass glass-card" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <input 
+              className="input" 
+              placeholder="Search by customer name or order number..." 
+              value={historySearch} 
+              onChange={e => {
+                setHistorySearch(e.target.value);
+                fetchHistory(e.target.value);
+              }}
+              style={{ flex: 1 }}
+            />
+            <button className="btn btn-primary" onClick={() => fetchHistory()}>Search</button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+            {historyOrders.map(order => (
+              <div key={order.id} className="glass glass-card ticket">
+                <div className="ticket-header">
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem' }}>
+                      {order.customerName || `Order #${order.orderNumber}`}
+                    </h3>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                      {new Date(order.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <span className="badge" style={{ background: order.status === 'completed' ? 'var(--success)' : 'var(--danger)', color: '#fff' }}>
+                    {order.status}
+                  </span>
+                </div>
+
+                <div className="ticket-items" style={{ margin: '0.75rem 0' }}>
+                  {(order.orderItems || []).map(item => (
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.95rem' }}>
+                      <span>{item.quantity}x {item.menuItem?.name || 'Item'}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button 
+                  className="btn btn-outline" 
+                  style={{ width: '100%', borderColor: 'var(--primary)', color: 'var(--primary)', marginTop: '0.5rem' }}
+                  onClick={() => handleRecallOrder(order.id)}
+                >
+                  ↩ Recall to Active Queue
+                </button>
+              </div>
+            ))}
+            {historyOrders.length === 0 && (
+              <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No past orders found</p>
+            )}
+          </div>
         </div>
       )}
 

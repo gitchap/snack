@@ -9,6 +9,8 @@ export default function ServiceScreen() {
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyOrders, setHistoryOrders] = useState([]);
 
   useEffect(() => {
     fetch('/api/orders/active')
@@ -51,8 +53,23 @@ export default function ServiceScreen() {
     };
   }, [socket]);
 
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch('/api/orders/history?limit=20');
+      const data = await res.json();
+      if (Array.isArray(data)) setHistoryOrders(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const fulfillItem = (itemId) => {
     socket.emit('fulfill_item', { itemId });
+  };
+
+  const handleRecallOrder = (orderId) => {
+    socket.emit('recall_order', { orderId });
+    setHistoryOrders(prev => prev.filter(o => o.id !== orderId));
   };
 
   const renderOptions = (optionsSnapshot) => {
@@ -89,6 +106,7 @@ export default function ServiceScreen() {
       <div className="topbar glass">
         <h2>Service Display</h2>
         <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="btn btn-outline" onClick={() => { setShowHistoryModal(true); fetchHistory(); }}>History & Recall</button>
           <button className="btn btn-outline" onClick={() => navigate('/order')}>Back to Order</button>
           <button className="btn btn-outline" onClick={logout}>Logout</button>
         </div>
@@ -135,6 +153,39 @@ export default function ServiceScreen() {
         ))}
         {orders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No active orders</p>}
       </div>
+
+      {showHistoryModal && (
+        <div className="modal-overlay" onClick={() => setShowHistoryModal(false)}>
+          <div className="glass glass-card modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '550px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0 }}>Completed Orders History</h3>
+              <button className="btn btn-icon btn-outline" onClick={() => setShowHistoryModal(false)}>×</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {historyOrders.map(order => (
+                <div key={order.id} className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <strong>{order.customerName || `Order #${order.orderNumber}`}</strong>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(order.createdAt).toLocaleTimeString()}</span>
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                    {(order.orderItems || []).map(i => `${i.quantity}x ${i.menuItem?.name || 'Item'}`).join(', ')}
+                  </div>
+                  <button 
+                    className="btn btn-primary" 
+                    style={{ marginTop: '0.5rem', padding: '0.45rem 0.8rem', fontSize: '0.85rem' }}
+                    onClick={() => handleRecallOrder(order.id)}
+                  >
+                    ↩ Recall Order to Active Queue
+                  </button>
+                </div>
+              ))}
+              {historyOrders.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>No completed orders found</p>}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
