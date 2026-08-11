@@ -57,18 +57,22 @@ export default function ServiceScreen() {
     if (!optionsSnapshot) return null;
     try {
       const parsed = typeof optionsSnapshot === 'string' ? JSON.parse(optionsSnapshot) : optionsSnapshot;
-      const parts = [];
-      Object.entries(parsed).forEach(([key, val]) => {
-        if (Array.isArray(val) && val.length > 0) {
-          parts.push(val.join(', '));
-        }
-      });
-      if (parts.length === 0) return null;
+      const entries = Object.entries(parsed).filter(([_, val]) => Array.isArray(val) && val.length > 0);
+      if (entries.length === 0) return null;
       return (
-        <div className="options-list" style={{ marginTop: '0.5rem', width: '100%' }}>
-          {parts.map((p, idx) => (
-            <div key={idx} className="option-line" style={{ padding: '0.35rem 0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '0.25rem', fontSize: '1rem', color: '#a7f3d0', borderLeft: '3px solid var(--primary)' }}>
-              {p}
+        <div className="options-list" style={{ marginTop: '0.5rem', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {entries.map(([groupName, choices]) => (
+            <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {groupName}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                {choices.map((c, idx) => (
+                  <div key={idx} className="option-line" style={{ padding: '0.45rem 0.75rem', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', fontSize: '1.05rem', color: '#a7f3d0', borderLeft: '4px solid var(--primary)', fontWeight: '600' }}>
+                    {c}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
