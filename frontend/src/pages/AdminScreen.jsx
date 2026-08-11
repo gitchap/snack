@@ -14,7 +14,6 @@ function MenuItemCard({ item, onClick }) {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <strong style={{ fontSize: '1.2rem', color: '#fff' }}>{item.name}</strong>
-        <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.15rem' }}>${item.price.toFixed(2)}</span>
       </div>
 
       {item.options?.length > 0 && (
@@ -55,7 +54,6 @@ export default function AdminScreen() {
 
   // Add Item form state
   const [newItemName, setNewItemName] = useState('');
-  const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemCategoryId, setNewItemCategoryId] = useState('');
   const [pendingOptions, setPendingOptions] = useState([]);
   const [newOptName, setNewOptName] = useState('Ingredients');
@@ -152,7 +150,7 @@ export default function AdminScreen() {
     const res = await fetch('/api/admin/menu', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ name: newItemName, price: parseFloat(newItemPrice), categoryId: parseInt(newItemCategoryId) })
+      body: JSON.stringify({ name: newItemName, categoryId: parseInt(newItemCategoryId) })
     });
     const item = await res.json();
     for (const opt of pendingOptions) {
@@ -162,7 +160,7 @@ export default function AdminScreen() {
         body: JSON.stringify(opt)
       });
     }
-    setNewItemName(''); setNewItemPrice(''); setPendingOptions([]);
+    setNewItemName(''); setPendingOptions([]);
     setCreatedItemId(item.id);
     fetchMenu();
     setTimeout(() => setCreatedItemId(null), 3000);
@@ -198,32 +196,12 @@ export default function AdminScreen() {
             <h3>Add New Item</h3>
             <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <input className="input" placeholder="Item Name" value={newItemName} onChange={e => setNewItemName(e.target.value)} required />
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <div className="input" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: 1, padding: '0 0.85rem' }}>
-                  <span style={{ color: 'var(--text-muted)', fontWeight: 'bold' }}>$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1rem', fontFamily: 'inherit', padding: '0.75rem 0' }}
-                    placeholder="0.00"
-                    value={newItemPrice}
-                    onChange={e => setNewItemPrice(e.target.value)}
-                    onBlur={() => {
-                      const num = parseFloat(newItemPrice);
-                      if (!isNaN(num)) setNewItemPrice(num.toFixed(2));
-                    }}
-                    required
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <CustomSelect
-                    options={categories.map(c => ({ value: c.id, label: c.name }))}
-                    value={newItemCategoryId}
-                    onChange={val => setNewItemCategoryId(val)}
-                    onAddNew={handleCreateCategory}
-                  />
-                </div>
-              </div>
+              <CustomSelect
+                options={categories.map(c => ({ value: c.id, label: c.name }))}
+                value={newItemCategoryId}
+                onChange={val => setNewItemCategoryId(val)}
+                onAddNew={handleCreateCategory}
+              />
 
               {pendingOptions.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>

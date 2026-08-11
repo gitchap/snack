@@ -12,7 +12,8 @@ export default function OrderScreen() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [cart, setCart] = useState([]);
   const [customizingItem, setCustomizingItem] = useState(null);
-  const [cashTendered, setCashTendered] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [priority, setPriority] = useState(false);
   const menuContainerRef = useRef(null);
   
   const fetchMenu = () => {
@@ -78,11 +79,11 @@ export default function OrderScreen() {
       quantity: c.quantity,
       optionsSnapshot: c.optionsSnapshot
     }));
-    socket.emit('place_order', { items });
+    socket.emit('place_order', { items, customerName, priority });
     setCart([]);
+    setCustomerName('');
+    setPriority(false);
   };
-
-  const cartTotal = cart.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
 
   const formatSnapshot = (snapshot) => {
     if (!snapshot || Object.keys(snapshot).length === 0) return null;
@@ -92,7 +93,16 @@ export default function OrderScreen() {
         parts.push(val.join(', '));
       }
     });
-    return parts.join(' | ');
+    if (parts.length === 0) return null;
+    return (
+      <div className="options-list" style={{ marginTop: '0.5rem', width: '100%' }}>
+        {parts.map((p, idx) => (
+          <div key={idx} className="option-line" style={{ padding: '0.35rem 0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '0.25rem', fontSize: '1rem', color: '#a7f3d0', borderLeft: '3px solid var(--primary)' }}>
+            {p}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -141,7 +151,6 @@ export default function OrderScreen() {
                   {(cat.menuItems || []).map(item => (
                     <div key={item.id} className="glass glass-card menu-item" onClick={() => handleItemClick(item)}>
                       <h3 style={{ fontSize: '1.2rem' }}>{item.name}</h3>
-                      <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.15rem' }}>${item.price.toFixed(2)}</span>
                       {item.options && item.options.length > 0 && (
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Customizable</span>
                       )}
@@ -164,13 +173,10 @@ export default function OrderScreen() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <strong>{item.name}</strong>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>${item.price.toFixed(2)}</div>
                     </div>
-                    <button className="btn btn-icon btn-danger" onClick={() => removeFromCart(item.cartId)}>×</button>
+                    <button className="btn btn-icon btn-danger" style={{ borderRadius: '50%', width: '32px', height: '32px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => removeFromCart(item.cartId)}>×</button>
                   </div>
-                  {formattedOpts && (
-                    <span className="options-tag">{formattedOpts}</span>
-                  )}
+                  {formattedOpts}
                 </div>
               );
             })}
@@ -178,60 +184,37 @@ export default function OrderScreen() {
           </div>
           
           <div className="cart-footer">
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '1.25rem', fontWeight: 'bold' }}>
-              <span>Total:</span>
-              <span>${cartTotal.toFixed(2)}</span>
-            </div>
-
             <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Cash Tendered</label>
-              <div className="input" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0 0.85rem' }}>
-                <span style={{ color: 'var(--text-muted)', fontWeight: 'bold', fontSize: '1.2rem' }}>$</span>
-                <input
-                  type="number"
-                  placeholder="0.00"
-                  min="0"
-                  step="0.01"
-                  value={cashTendered}
-                  onChange={e => setCashTendered(e.target.value)}
-                  onBlur={() => {
-                    const num = parseFloat(cashTendered);
-                    if (!isNaN(num)) setCashTendered(num.toFixed(2));
-                  }}
-                  style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold', padding: '0.75rem 0' }}
-                />
-              </div>
-              {cashTendered !== '' && parseFloat(cashTendered) >= cartTotal && (
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between',
-                  background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)',
-                  borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem',
-                  fontSize: '1.1rem', fontWeight: 'bold', color: '#6ee7b7'
-                }}>
-                  <span>Change Due</span>
-                  <span>${(parseFloat(cashTendered) - cartTotal).toFixed(2)}</span>
-                </div>
-              )}
-              {cashTendered !== '' && parseFloat(cashTendered) < cartTotal && (
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between',
-                  background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)',
-                  borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem',
-                  fontSize: '1.1rem', fontWeight: 'bold', color: '#fca5a5'
-                }}>
-                  <span>Still Owed</span>
-                  <span>${(cartTotal - parseFloat(cashTendered)).toFixed(2)}</span>
-                </div>
-              )}
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Customer Name</label>
+              <input
+                className="input"
+                type="text"
+                placeholder="Name (Optional)"
+                value={customerName}
+                onChange={e => setCustomerName(e.target.value)}
+              />
+            </div>
+            
+            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                id="priorityCheck"
+                checked={priority}
+                onChange={e => setPriority(e.target.checked)}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <label htmlFor="priorityCheck" style={{ fontSize: '1.1rem', cursor: 'pointer', color: priority ? 'var(--warning)' : 'var(--text-main)', fontWeight: priority ? 'bold' : 'normal' }}>
+                Priority Order 🔥
+              </label>
             </div>
 
             <button
               className="btn btn-success"
               style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
-              onClick={() => { submitOrder(); setCashTendered(''); }}
+              onClick={submitOrder}
               disabled={cart.length === 0}
             >
-              Submit Order
+              Send to Kitchen
             </button>
           </div>
         </div>

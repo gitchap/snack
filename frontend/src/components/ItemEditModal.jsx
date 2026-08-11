@@ -3,7 +3,6 @@ import CustomSelect from './CustomSelect';
 
 export default function ItemEditModal({ item, categories, token, onClose, onSaved }) {
   const [name, setName] = useState(item.name);
-  const [price, setPrice] = useState(typeof item.price === 'number' ? item.price.toFixed(2) : (parseFloat(item.price) || 0).toFixed(2));
   const [categoryId, setCategoryId] = useState(item.categoryId);
   const [options, setOptions] = useState(item.options || []);
 
@@ -23,7 +22,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
       const res = await fetch(`/api/admin/menu/${item.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ name, price: parseFloat(price), categoryId: parseInt(categoryId) })
+        body: JSON.stringify({ name, categoryId: parseInt(categoryId) })
       });
       if (res.ok) {
         await onSaved();
@@ -141,21 +140,6 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
             <label style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Item Details</label>
             <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Item Name" />
             <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <div className="input" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: 1, padding: '0 0.85rem' }}>
-                <span style={{ color: 'var(--text-muted)', fontWeight: 'bold' }}>$</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1rem', fontFamily: 'inherit', padding: '0.75rem 0' }}
-                  value={price}
-                  onChange={e => setPrice(e.target.value)}
-                  onBlur={() => {
-                    const num = parseFloat(price);
-                    if (!isNaN(num)) setPrice(num.toFixed(2));
-                  }}
-                  placeholder="0.00"
-                />
-              </div>
               <div style={{ flex: 1 }}>
                 <CustomSelect
                   options={categories.map(c => ({ value: c.id, label: c.name }))}

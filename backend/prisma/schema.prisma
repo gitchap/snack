@@ -28,7 +28,6 @@ model Category {
 model MenuItem {
   id         Int          @id @default(autoincrement())
   name       String
-  price      Float
   categoryId Int
   category   Category     @relation(fields: [categoryId], references: [id])
   options    ItemOption[]
@@ -47,6 +46,8 @@ model ItemOption {
 model Order {
   id            Int         @id @default(autoincrement())
   orderNumber   Int
+  customerName  String?
+  priority      Boolean     @default(false)
   status        String      @default("active") // active, completed, cancelled
   kitchenStatus String      @default("pending") // pending, ready
   createdAt     DateTime    @default(now())

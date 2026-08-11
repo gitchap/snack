@@ -120,8 +120,8 @@ app.delete('/api/admin/categories/:id', authenticateToken, async (req, res) => {
 app.post('/api/admin/menu', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
-    const { name, price, categoryId } = req.body;
-    const item = await prisma.menuItem.create({ data: { name, price, categoryId } });
+    const { name, categoryId } = req.body;
+    const item = await prisma.menuItem.create({ data: { name, categoryId } });
     io.emit('menu_updated');
     res.json(item);
   } catch (e) {
@@ -146,10 +146,10 @@ app.delete('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
 app.put('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
-    const { name, price, categoryId } = req.body;
+    const { name, categoryId } = req.body;
     const item = await prisma.menuItem.update({
       where: { id: parseInt(req.params.itemId) },
-      data: { name, price: parseFloat(price), categoryId: parseInt(categoryId) },
+      data: { name, categoryId: parseInt(categoryId) },
       include: { options: true }
     });
     io.emit('menu_updated');
@@ -228,6 +228,10 @@ app.get('/api/menu', async (req, res) => {
 app.get('/api/orders/active', async (req, res) => {
   const orders = await prisma.order.findMany({
     where: { status: 'active' },
+    orderBy: [
+      { priority: 'desc' },
+      { createdAt: 'asc' }
+    ],
     include: {
       orderItems: {
         include: { menuItem: true }
@@ -254,6 +258,8 @@ io.on('connection', (socket) => {
       const newOrder = await prisma.order.create({
         data: {
           orderNumber,
+          customerName: data.customerName || null,
+          priority: Boolean(data.priority),
           orderItems: {
             create: data.items.map(item => ({
               menuItemId: item.menuItemId,

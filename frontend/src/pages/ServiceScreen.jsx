@@ -13,7 +13,15 @@ export default function ServiceScreen() {
       .then(res => res.json())
       .then(data => setOrders(data));
 
-    socket.on('new_order', (order) => setOrders(prev => [...prev, order]));
+    socket.on('new_order', (order) => {
+      setOrders(prev => {
+        const newOrders = [...prev, order];
+        return newOrders.sort((a, b) => {
+          if (a.priority === b.priority) return new Date(a.createdAt) - new Date(b.createdAt);
+          return a.priority ? -1 : 1;
+        });
+      });
+    });
     
     socket.on('order_updated', (updatedOrder) => {
       setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
@@ -56,7 +64,15 @@ export default function ServiceScreen() {
         }
       });
       if (parts.length === 0) return null;
-      return <span className="options-tag">{parts.join(' | ')}</span>;
+      return (
+        <div className="options-list" style={{ marginTop: '0.5rem', width: '100%' }}>
+          {parts.map((p, idx) => (
+            <div key={idx} className="option-line" style={{ padding: '0.35rem 0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '0.25rem', fontSize: '1rem', color: '#a7f3d0', borderLeft: '3px solid var(--primary)' }}>
+              {p}
+            </div>
+          ))}
+        </div>
+      );
     } catch (e) {
       return null;
     }
@@ -76,7 +92,13 @@ export default function ServiceScreen() {
         {orders.map(order => (
           <div key={order.id} className="glass glass-card ticket">
             <div className="ticket-header">
-              <h3>Order #{order.orderNumber}</h3>
+              <div>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                  Order #{order.orderNumber}
+                  {order.priority && <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem', padding: '0.15rem 0.5rem' }}>🔥 Priority</span>}
+                </h3>
+                {order.customerName && <div style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginTop: '0.35rem' }}>{order.customerName}</div>}
+              </div>
               {order.kitchenStatus === 'pending' ? (
                 <span className="badge badge-pending">Kitchen Prep</span>
               ) : (
