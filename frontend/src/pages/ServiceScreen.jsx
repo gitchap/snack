@@ -104,7 +104,12 @@ export default function ServiceScreen() {
   return (
     <>
       <div className="topbar glass">
-        <h2>Service Display</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <h2>Service Display</h2>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)' }}>
+            ↓ Top to Bottom • Left to Right →
+          </span>
+        </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn btn-outline" onClick={() => { setShowHistoryModal(true); fetchHistory(); }}>History & Recall</button>
           <button className="btn btn-outline" onClick={() => navigate('/order')}>Back to Order</button>
@@ -113,22 +118,43 @@ export default function ServiceScreen() {
       </div>
       
       <div className="main-content service-grid">
-        {orders.map(order => (
-          <div key={order.id} className={`glass glass-card ticket ${order.kitchenStatus === 'ready' ? 'ticket-ready' : 'ticket-pending'}`}>
-            <div className="ticket-header">
-              <div>
-                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.35rem' }}>
-                  {order.customerName || `Order #${order.orderNumber}`}
-                  {order.priority && <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem', padding: '0.15rem 0.5rem' }}>🔥 Priority</span>}
-                </h3>
-                {order.customerName && <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.25rem' }}>Order #{order.orderNumber}</div>}
+        {orders.map((order, index) => {
+          const isFirstInQueue = index === 0;
+          return (
+            <div 
+              key={order.id} 
+              className={`glass glass-card ticket ${order.kitchenStatus === 'ready' ? 'ticket-ready' : 'ticket-pending'}`}
+              style={{
+                borderColor: isFirstInQueue && order.kitchenStatus !== 'ready' ? 'var(--primary)' : undefined,
+                boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 16px rgba(139, 92, 246, 0.35)' : undefined
+              }}
+            >
+              <div className="ticket-header">
+                <div>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontSize: '1.35rem' }}>
+                    <span 
+                      style={{ 
+                        fontSize: '0.85rem', 
+                        padding: '0.2rem 0.5rem', 
+                        borderRadius: '4px', 
+                        background: isFirstInQueue ? 'var(--primary)' : 'rgba(255,255,255,0.12)', 
+                        color: '#fff',
+                        fontWeight: '800'
+                      }}
+                    >
+                      #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
+                    </span>
+                    {order.customerName || `Order #${order.orderNumber}`}
+                    {order.priority && <span className="badge" style={{ background: 'var(--warning)', color: '#000', fontSize: '0.85rem', padding: '0.15rem 0.5rem' }}>🔥 Priority</span>}
+                  </h3>
+                  {order.customerName && <div style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.25rem' }}>Order #{order.orderNumber}</div>}
+                </div>
+                {order.kitchenStatus === 'pending' ? (
+                  <span className="badge badge-pending">Kitchen Prep</span>
+                ) : (
+                  <span className="badge badge-ready">Hot Food Ready</span>
+                )}
               </div>
-              {order.kitchenStatus === 'pending' ? (
-                <span className="badge badge-pending">Kitchen Prep</span>
-              ) : (
-                <span className="badge badge-ready">Hot Food Ready</span>
-              )}
-            </div>
             
             <div className="ticket-items">
               {order.orderItems.map(item => (
@@ -174,7 +200,8 @@ export default function ServiceScreen() {
               ))}
             </div>
           </div>
-        ))}
+        );
+      })}
         {orders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No active orders</p>}
       </div>
 
