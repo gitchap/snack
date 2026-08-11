@@ -133,34 +133,38 @@ export default function ServiceScreen() {
                 boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 16px rgba(139, 92, 246, 0.35)' : undefined
               }}
             >
-              <div className="ticket-header">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1, minWidth: 0 }}>
-                  {/* Queue badge + Name on the same line */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span style={{ 
-                      fontSize: '0.85rem', 
-                      padding: '0.25rem 0.55rem',
-                      borderRadius: 'var(--radius-md)', 
-                      background: isFirstInQueue ? 'var(--primary)' : 'rgba(255,255,255,0.12)', 
-                      color: '#fff',
-                      fontWeight: '800',
-                      flexShrink: 0,
-                    }}>
-                      #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
-                    </span>
-                    <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
-                      {order.customerName || formatTicketCode(order.orderNumber)}
-                    </h3>
-                    {order.priority && (
-                      <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔥</span>
+              <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 0 }}>
+                  {/* Column 1: Queue Badge */}
+                  <span style={{ 
+                    fontSize: '0.85rem', 
+                    padding: '0.25rem 0.55rem',
+                    borderRadius: 'var(--radius-md)', 
+                    background: isFirstInQueue ? 'var(--primary)' : 'rgba(255,255,255,0.12)', 
+                    color: '#fff',
+                    fontWeight: '800',
+                    flexShrink: 0,
+                    marginTop: '0.05rem'
+                  }}>
+                    #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
+                  </span>
+
+                  {/* Column 2: Name & Fire (Row 1), Ticket Code (Row 2, aligned under Name) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
+                        {order.customerName || formatTicketCode(order.orderNumber)}
+                      </h3>
+                      {order.priority && (
+                        <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔥</span>
+                      )}
+                    </div>
+                    {order.customerName && (
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>
+                        {formatTicketCode(order.orderNumber)}
+                      </div>
                     )}
                   </div>
-                  {/* Ticket code below the name */}
-                  {order.customerName && (
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', paddingLeft: '0.1rem', fontWeight: '500' }}>
-                      {formatTicketCode(order.orderNumber)}
-                    </div>
-                  )}
                 </div>
 
                 {/* Status badge — right */}
