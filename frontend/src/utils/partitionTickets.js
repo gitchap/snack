@@ -11,31 +11,40 @@ export function partitionOrderItems(order, availableHeight, filterItemsFn) {
   const items = filterItemsFn ? filterItemsFn(allItems) : allItems;
   if (!items || items.length === 0) return [];
 
-  // Estimated layout constants (in pixels)
-  const CARD_CHROME_HEIGHT = 48; // padding (1.5rem x 2) + border
-  const MAIN_HEADER_HEIGHT = 56; // queue badge + name + code + status badge
-  const CONT_HEADER_HEIGHT = 50; // continuation top header
-  const ACTION_BTN_HEIGHT = 54;  // "Food Ready" or "Complete Order" button
-  const CONT_FOOTER_HEIGHT = 46; // "⬇ Continued in next column ➔" banner
-  const ITEM_GAP = 8;
+  // Calibrated CSS layout constants (in pixels) based on Snack Shack design tokens:
+  // - .ticket card padding (1.5rem x 2) + border: 52px
+  // - .ticket-header (title, queue badge, subtext, status): 72px
+  // - .ticket-continuation-header: 56px
+  // - .ticket-item base (44px touch-min button + 28px padding + 2px border + 8px margin): 82px
+  // - .options-list (title, chips, spacing): ~50px per option group
+  // - .ticket-continuation-footer ("⬇ Continues in next column ➔"): 50px
+  // - Action button ("Food Ready" / "Complete Order") + margin: 58px
+  // - Column bottom safety buffer: 28px
+  const CARD_CHROME_HEIGHT = 52;
+  const MAIN_HEADER_HEIGHT = 72;
+  const CONT_HEADER_HEIGHT = 56;
+  const ACTION_BTN_HEIGHT = 58;
+  const CONT_FOOTER_HEIGHT = 50;
+  const COLUMN_SAFETY_BUFFER = 28;
 
   const estimateItemHeight = (item) => {
-    let baseHeight = 56; // quantity badge, name, fulfill/prep button
+    let itemHeight = 82; // base single item with quantity badge, title, button
     try {
       const snap = typeof item.optionsSnapshot === 'string' ? JSON.parse(item.optionsSnapshot) : item.optionsSnapshot;
       if (snap && typeof snap === 'object') {
         const optionGroups = Object.entries(snap).filter(([_, val]) => Array.isArray(val) && val.length > 0);
-        baseHeight += optionGroups.length * 36;
+        itemHeight += optionGroups.length * 50;
       }
     } catch (_) {}
-    return baseHeight + ITEM_GAP;
+    return itemHeight;
   };
 
   const itemHeights = items.map(estimateItemHeight);
   const totalItemsHeight = itemHeights.reduce((a, b) => a + b, 0);
   const totalSingleCardHeight = CARD_CHROME_HEIGHT + MAIN_HEADER_HEIGHT + totalItemsHeight + ACTION_BTN_HEIGHT;
 
-  const effHeight = Math.max(availableHeight || 600, 300);
+  const rawHeight = availableHeight || (typeof window !== 'undefined' ? window.innerHeight - 100 : 750);
+  const effHeight = Math.max(rawHeight - COLUMN_SAFETY_BUFFER, 300);
 
   // If the whole card fits in the available column height, DO NOT split
   if (totalSingleCardHeight <= effHeight || items.length <= 1) {
