@@ -48,7 +48,8 @@ app.post('/api/auth/login', async (req, res) => {
     const valid = await bcrypt.compare(pin, user.pin);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
     
-    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '12h' });
+    // Indefinite session: stay signed in permanently until explicit logout
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '36500d' });
     res.json({ token, role: user.role });
   } catch (e) {
     console.error('Login error:', e);
