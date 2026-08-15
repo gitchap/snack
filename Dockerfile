@@ -22,4 +22,4 @@ RUN npm run build
 # Start backend which also serves frontend
 WORKDIR /app/backend
 EXPOSE 3005
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "npx prisma db push && node server.js"]

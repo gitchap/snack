@@ -18,7 +18,8 @@ const io = new Server(server, {
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
@@ -87,6 +88,341 @@ app.put('/api/admin/users/:id/pin', authenticateToken, async (req, res) => {
   }
 });
 
+// --- Database Management APIs (Backup, Export & Import) ---
+
+app.get('/api/admin/database/stats', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  try {
+    const [categoryCount, menuItemCount, itemOptionCount, userCount, activeOrdersCount, historyOrdersCount] = await Promise.all([
+      prisma.category.count(),
+      prisma.menuItem.count(),
+      prisma.itemOption.count(),
+      prisma.user.count(),
+      prisma.order.count({ where: { status: 'active' } }),
+      prisma.order.count({ where: { status: { in: ['completed', 'cancelled'] } } })
+    ]);
+    res.json({
+      categoryCount,
+      menuItemCount,
+      itemOptionCount,
+      userCount,
+      activeOrdersCount,
+      historyOrdersCount,
+      totalOrdersCount: activeOrdersCount + historyOrdersCount
+    });
+  } catch (e) {
+    console.error('Database stats error:', e);
+    res.status(500).json({ error: 'Failed to fetch database statistics' });
+  }
+});
+
+app.get('/api/admin/database/export', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  try {
+    const mode = req.query.mode === 'full' ? 'full' : 'menu';
+    const includeUsers = req.query.includeUsers !== 'false';
+
+    const categories = await prisma.category.findMany({
+      include: {
+        menuItems: {
+          include: {
+            options: true
+          }
+        }
+      }
+    });
+
+    let users = [];
+    if (includeUsers) {
+      users = await prisma.user.findMany({
+        select: {
+          username: true,
+          pin: true,
+          role: true,
+          createdAt: true
+        }
+      });
+    }
+
+    let orders = [];
+    if (mode === 'full') {
+      orders = await prisma.order.findMany({
+        orderBy: { createdAt: 'asc' },
+        include: {
+          orderItems: {
+            include: {
+              menuItem: true
+            }
+          }
+        }
+      });
+    }
+
+    const totalMenuItems = categories.reduce((sum, c) => sum + (c.menuItems?.length || 0), 0);
+    const totalOptions = categories.reduce((sum, c) => sum + (c.menuItems || []).reduce((s, m) => s + (m.options?.length || 0), 0), 0);
+
+    const payload = {
+      version: '1.0',
+      app: 'snack-shack',
+      exportedAt: new Date().toISOString(),
+      exportedBy: req.user.username,
+      mode,
+      summary: {
+        categories: categories.length,
+        menuItems: totalMenuItems,
+        itemOptions: totalOptions,
+        users: users.length,
+        orders: orders.length
+      },
+      data: {
+        categories,
+        users,
+        orders
+      }
+    };
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="snack-shack-${mode}-${dateStr}.json"`);
+    res.send(JSON.stringify(payload, null, 2));
+  } catch (e) {
+    console.error('Database export error:', e);
+    res.status(500).json({ error: 'Failed to export database' });
+  }
+});
+
+app.post('/api/admin/database/import', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') return res.sendStatus(403);
+  try {
+    const { payload, mode = 'merge', importOrders = false, importUsers = true } = req.body;
+
+    if (!payload || !payload.data || !Array.isArray(payload.data.categories)) {
+      return res.status(400).json({ error: 'Invalid backup file format. Missing data.categories array.' });
+    }
+
+    const { categories = [], users = [], orders = [] } = payload.data;
+
+    let importedCounts = {
+      categories: 0,
+      menuItems: 0,
+      options: 0,
+      users: 0,
+      orders: 0
+    };
+
+    await prisma.$transaction(async (tx) => {
+      if (mode === 'replace') {
+        // Clear existing tables in dependency order
+        await tx.orderItem.deleteMany();
+        await tx.order.deleteMany();
+        await tx.itemOption.deleteMany();
+        await tx.menuItem.deleteMany();
+        await tx.category.deleteMany();
+
+        // Import users if requested
+        if (importUsers && Array.isArray(users) && users.length > 0) {
+          for (const u of users) {
+            if (u.username && u.pin) {
+              await tx.user.upsert({
+                where: { username: u.username },
+                update: { pin: u.pin, role: u.role || 'staff' },
+                create: { username: u.username, pin: u.pin, role: u.role || 'staff' }
+              });
+              importedCounts.users++;
+            }
+          }
+        }
+
+        const menuItemIdMap = new Map();
+
+        // Create categories, items, options
+        for (const cat of categories) {
+          if (!cat.name) continue;
+          const createdCat = await tx.category.create({
+            data: { name: cat.name }
+          });
+          importedCounts.categories++;
+
+          for (const item of (cat.menuItems || [])) {
+            if (!item.name) continue;
+            const createdItem = await tx.menuItem.create({
+              data: {
+                name: item.name,
+                price: typeof item.price !== 'undefined' ? parseFloat(item.price) || 0.0 : 0.0,
+                requiresCooking: item.requiresCooking !== false,
+                categoryId: createdCat.id
+              }
+            });
+            menuItemIdMap.set(item.id, createdItem.id);
+            importedCounts.menuItems++;
+
+            for (const opt of (item.options || [])) {
+              if (!opt.choices) continue;
+              await tx.itemOption.create({
+                data: {
+                  menuItemId: createdItem.id,
+                  name: (opt.name || 'Ingredients').trim(),
+                  choices: opt.choices.trim(),
+                  defaultOn: opt.defaultOn !== false,
+                  required: opt.required === true
+                }
+              });
+              importedCounts.options++;
+            }
+          }
+        }
+
+        // Import orders if requested
+        if (importOrders && Array.isArray(orders) && orders.length > 0) {
+          for (const ord of orders) {
+            const createdOrder = await tx.order.create({
+              data: {
+                orderNumber: ord.orderNumber || 1,
+                customerName: ord.customerName || null,
+                priority: Boolean(ord.priority),
+                status: ord.status || 'completed',
+                kitchenStatus: ord.kitchenStatus || 'ready',
+                createdAt: ord.createdAt ? new Date(ord.createdAt) : new Date()
+              }
+            });
+            importedCounts.orders++;
+
+            for (const ordItem of (ord.orderItems || [])) {
+              const mappedItemId = menuItemIdMap.get(ordItem.menuItemId) || (ordItem.menuItem ? Array.from(menuItemIdMap.values())[0] : null);
+              if (mappedItemId) {
+                await tx.orderItem.create({
+                  data: {
+                    orderId: createdOrder.id,
+                    menuItemId: mappedItemId,
+                    quantity: ordItem.quantity || 1,
+                    itemStatus: ordItem.itemStatus || 'fulfilled',
+                    kitchenItemStatus: ordItem.kitchenItemStatus || 'ready',
+                    optionsSnapshot: typeof ordItem.optionsSnapshot === 'string' ? ordItem.optionsSnapshot : JSON.stringify(ordItem.optionsSnapshot || {})
+                  }
+                });
+              }
+            }
+          }
+        }
+      } else {
+        // Mode: 'merge'
+        const menuItemIdMap = new Map();
+
+        // Merge Categories and Menu Items
+        for (const cat of categories) {
+          if (!cat.name) continue;
+          let targetCat = await tx.category.findFirst({ where: { name: cat.name.trim() } });
+          if (!targetCat) {
+            targetCat = await tx.category.create({ data: { name: cat.name.trim() } });
+            importedCounts.categories++;
+          }
+
+          for (const item of (cat.menuItems || [])) {
+            if (!item.name) continue;
+            let targetItem = await tx.menuItem.findFirst({
+              where: { name: item.name.trim(), categoryId: targetCat.id }
+            });
+            if (!targetItem) {
+              targetItem = await tx.menuItem.create({
+                data: {
+                  name: item.name.trim(),
+                  price: typeof item.price !== 'undefined' ? parseFloat(item.price) || 0.0 : 0.0,
+                  requiresCooking: item.requiresCooking !== false,
+                  categoryId: targetCat.id
+                }
+              });
+              importedCounts.menuItems++;
+            }
+            menuItemIdMap.set(item.id, targetItem.id);
+
+            for (const opt of (item.options || [])) {
+              if (!opt.choices) continue;
+              const optName = (opt.name || 'Ingredients').trim();
+              const existingOpt = await tx.itemOption.findFirst({
+                where: { menuItemId: targetItem.id, name: optName }
+              });
+              if (!existingOpt) {
+                await tx.itemOption.create({
+                  data: {
+                    menuItemId: targetItem.id,
+                    name: optName,
+                    choices: opt.choices.trim(),
+                    defaultOn: opt.defaultOn !== false,
+                    required: opt.required === true
+                  }
+                });
+                importedCounts.options++;
+              }
+            }
+          }
+        }
+
+        // Merge Users
+        if (importUsers && Array.isArray(users) && users.length > 0) {
+          for (const u of users) {
+            if (u.username && u.pin) {
+              const existingUser = await tx.user.findUnique({ where: { username: u.username } });
+              if (!existingUser) {
+                await tx.user.create({
+                  data: { username: u.username, pin: u.pin, role: u.role || 'staff' }
+                });
+                importedCounts.users++;
+              }
+            }
+          }
+        }
+
+        // Merge Orders
+        if (importOrders && Array.isArray(orders) && orders.length > 0) {
+          for (const ord of orders) {
+            const createdOrder = await tx.order.create({
+              data: {
+                orderNumber: ord.orderNumber || 1,
+                customerName: ord.customerName || null,
+                priority: Boolean(ord.priority),
+                status: ord.status || 'completed',
+                kitchenStatus: ord.kitchenStatus || 'ready',
+                createdAt: ord.createdAt ? new Date(ord.createdAt) : new Date()
+              }
+            });
+            importedCounts.orders++;
+
+            for (const ordItem of (ord.orderItems || [])) {
+              const mappedItemId = menuItemIdMap.get(ordItem.menuItemId);
+              if (mappedItemId) {
+                await tx.orderItem.create({
+                  data: {
+                    orderId: createdOrder.id,
+                    menuItemId: mappedItemId,
+                    quantity: ordItem.quantity || 1,
+                    itemStatus: ordItem.itemStatus || 'fulfilled',
+                    kitchenItemStatus: ordItem.kitchenItemStatus || 'ready',
+                    optionsSnapshot: typeof ordItem.optionsSnapshot === 'string' ? ordItem.optionsSnapshot : JSON.stringify(ordItem.optionsSnapshot || {})
+                  }
+                });
+              }
+            }
+          }
+        }
+      }
+    });
+
+    io.emit('menu_updated');
+    if (importOrders || mode === 'replace') {
+      io.emit('order_updated');
+    }
+
+    res.json({
+      success: true,
+      message: `Database successfully ${mode === 'replace' ? 'restored' : 'merged'}!`,
+      counts: importedCounts
+    });
+  } catch (e) {
+    console.error('Database import error:', e);
+    res.status(500).json({ error: e.message || 'Failed to import database' });
+  }
+});
+
 // Admin REST API for Categories (Protected)
 app.post('/api/admin/categories', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
@@ -135,10 +471,14 @@ app.delete('/api/admin/categories/:id', authenticateToken, async (req, res) => {
 app.post('/api/admin/menu', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
-    const { name, categoryId, requiresCooking } = req.body;
+    const { name, price, categoryId, requiresCooking } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'Item name is required' });
+    if (!categoryId || isNaN(parseInt(categoryId))) return res.status(400).json({ error: 'Valid category is required' });
+
     const item = await prisma.menuItem.create({
       data: {
         name: name.trim(),
+        price: typeof price !== 'undefined' ? parseFloat(price) || 0.0 : 0.0,
         categoryId: parseInt(categoryId),
         requiresCooking: requiresCooking !== false
       }
@@ -167,11 +507,14 @@ app.delete('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
 app.put('/api/admin/menu/:itemId', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
-    const { name, categoryId, requiresCooking } = req.body;
+    const { name, price, categoryId, requiresCooking } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Item name is required' });
     if (!categoryId || isNaN(parseInt(categoryId))) return res.status(400).json({ error: 'Valid category is required' });
 
     const data = { name: name.trim(), categoryId: parseInt(categoryId) };
+    if (typeof price !== 'undefined') {
+      data.price = parseFloat(price) || 0.0;
+    }
     if (typeof requiresCooking === 'boolean') {
       data.requiresCooking = requiresCooking;
     }
@@ -336,17 +679,36 @@ io.on('connection', (socket) => {
       });
       const orderNumber = count + 1;
 
+      // Check requiresCooking for all items in order
+      const itemIds = (data.items || []).map(i => i.menuItemId);
+      const menuItems = await prisma.menuItem.findMany({
+        where: { id: { in: itemIds } }
+      });
+      const menuItemMap = new Map(menuItems.map(m => [m.id, m]));
+
+      const orderItemsCreate = (data.items || []).map(item => {
+        const mi = menuItemMap.get(item.menuItemId);
+        const needsCooking = mi ? mi.requiresCooking !== false : true;
+        return {
+          menuItemId: item.menuItemId,
+          quantity: item.quantity || 1,
+          itemStatus: 'pending',
+          kitchenItemStatus: needsCooking ? 'pending' : 'ready',
+          optionsSnapshot: JSON.stringify(item.optionsSnapshot || {})
+        };
+      });
+
+      const anyCookingNeeded = orderItemsCreate.some(i => i.kitchenItemStatus === 'pending');
+      const initialKitchenStatus = anyCookingNeeded ? 'pending' : 'ready';
+
       const newOrder = await prisma.order.create({
         data: {
           orderNumber,
           customerName: data.customerName || null,
           priority: Boolean(data.priority),
+          kitchenStatus: initialKitchenStatus,
           orderItems: {
-            create: data.items.map(item => ({
-              menuItemId: item.menuItemId,
-              quantity: item.quantity,
-              optionsSnapshot: JSON.stringify(item.optionsSnapshot || {})
-            }))
+            create: orderItemsCreate
           }
         },
         include: {

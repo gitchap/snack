@@ -203,14 +203,17 @@ export default function ServiceScreen() {
 
                 {/* Status badge — right */}
                 {order.kitchenStatus === 'pending' ? (
-                  <span className="badge badge-pending">Kitchen Prep</span>
+                  <span className="badge badge-pending">Cooking...</span>
                 ) : (
-                  <span className="badge badge-ready">Hot Food Ready</span>
+                  <span className="badge badge-ready">Food Ready</span>
                 )}
               </div>
             
             <div className="ticket-items">
-              {order.orderItems.map(item => (
+              {order.orderItems.map(item => {
+                const isGrabAndGo = item.menuItem && item.menuItem.requiresCooking === false;
+
+                return (
                 <div 
                   key={item.id} 
                   className={`ticket-item ${item.itemStatus === 'fulfilled' ? 'fulfilled' : ''}`}
@@ -224,7 +227,7 @@ export default function ServiceScreen() {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
                       {/* Qty badge */}
                       <span style={{ 
                         background: 'var(--primary)', 
@@ -232,7 +235,7 @@ export default function ServiceScreen() {
                         fontWeight: '800', 
                         fontSize: '1.1rem', 
                         padding: '0.2rem 0.55rem',
-                        borderRadius: 'var(--radius-md)',
+                        borderRadius: 'var(--radius-md)', 
                         boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
                         flexShrink: 0
                       }}>
@@ -241,6 +244,20 @@ export default function ServiceScreen() {
                       <span style={{ fontSize: '1.15rem', fontWeight: '500', color: 'var(--text-main)', letterSpacing: '0.01em', lineHeight: '1.2' }}>
                         {item.menuItem?.name || 'Unknown'}
                       </span>
+
+                      {isGrabAndGo ? (
+                        <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', background: 'rgba(96, 165, 250, 0.18)', color: '#93c5fd', border: '1px solid rgba(96, 165, 250, 0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          🛍️ Grab & Go
+                        </span>
+                      ) : item.kitchenItemStatus === 'ready' ? (
+                        <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success-border)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          ✓ Food Ready
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', background: 'var(--warning-dim)', color: 'var(--warning)', border: '1px solid var(--warning-border)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          🍳 Cooking...
+                        </span>
+                      )}
                     </div>
 
                     {item.itemStatus === 'pending' ? (
@@ -289,7 +306,8 @@ export default function ServiceScreen() {
                   </div>
                   {renderOptions(item.optionsSnapshot)}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

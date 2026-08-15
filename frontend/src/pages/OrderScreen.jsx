@@ -77,6 +77,19 @@ export default function OrderScreen() {
 
   const { withLock, isLocked } = useActionLock(1500);
 
+  const activeCategoryItems = menu.find(c => c.id === activeCategory)?.menuItems || [];
+  const cartTotal = cart.reduce((acc, curr) => acc + (parseFloat(curr.price) || 0) * (curr.quantity || 1), 0);
+
+  const [cashTendered, setCashTendered] = useState('');
+
+  const handleQuickCash = (amount) => {
+    if (amount === 'exact') {
+      setCashTendered(cartTotal.toFixed(2));
+    } else {
+      setCashTendered(parseFloat(amount).toFixed(2));
+    }
+  };
+
   const submitOrder = withLock('submitOrder', () => {
     if (cart.length === 0) return;
     const items = cart.map(c => ({
@@ -88,6 +101,7 @@ export default function OrderScreen() {
     setCart([]);
     setCustomerName('');
     setPriority(false);
+    setCashTendered('');
   });
 
   const formatSnapshot = (snapshot) => {
@@ -171,8 +185,13 @@ export default function OrderScreen() {
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.25rem' }}>
                   {(cat.menuItems || []).map(item => (
-                    <div key={item.id} className="glass glass-card menu-item" onClick={() => handleItemClick(item)}>
-                      <h3 style={{ fontSize: '1.2rem' }}>{item.name}</h3>
+                    <div key={item.id} className="glass glass-card menu-item" onClick={() => handleItemClick(item)} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: '0.5rem' }}>
+                        <h3 style={{ fontSize: '1.2rem', margin: 0 }}>{item.name}</h3>
+                        <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '1.15rem' }}>
+                          ${(parseFloat(item.price) || 0).toFixed(2)}
+                        </span>
+                      </div>
                       {item.options && item.options.length > 0 && (
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Customizable</span>
                       )}
@@ -190,11 +209,15 @@ export default function OrderScreen() {
           <div className="cart-items">
             {cart.map(item => {
               const formattedOpts = formatSnapshot(item.optionsSnapshot);
+              const itemSubtotal = (parseFloat(item.price) || 0) * (item.quantity || 1);
               return (
                 <div key={item.cartId} className="cart-item glass" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <strong style={{ fontSize: '1.05rem' }}>{item.name}</strong>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--success)', fontWeight: '600', marginTop: '0.15rem' }}>
+                        ${itemSubtotal.toFixed(2)}
+                      </div>
                     </div>
                     <button
                       className="btn btn-danger"
@@ -221,6 +244,114 @@ export default function OrderScreen() {
           </div>
           
           <div className="cart-footer">
+            {/* Order Total Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--glass-border)', fontSize: '1.35rem', fontWeight: 'bold' }}>
+              <span>Total:</span>
+              <span style={{ color: 'var(--success)' }}>${cartTotal.toFixed(2)}</span>
+            </div>
+
+            {/* Cash Tendered & Quick Presets */}
+            <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '600' }}>Cash Tendered / Change Calculator</label>
+              
+              {/* Quick Cash Buttons */}
+              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  style={{ flex: 1, minWidth: '48px', padding: '0.4rem 0.2rem', fontSize: '0.85rem', fontWeight: '700' }}
+                  onClick={() => handleQuickCash('exact')}
+                  disabled={cartTotal <= 0}
+                >
+                  Exact
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  style={{ flex: 1, minWidth: '40px', padding: '0.4rem 0.2rem', fontSize: '0.85rem', fontWeight: '700' }}
+                  onClick={() => handleQuickCash('1')}
+                >
+                  $1
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  style={{ flex: 1, minWidth: '40px', padding: '0.4rem 0.2rem', fontSize: '0.85rem', fontWeight: '700' }}
+                  onClick={() => handleQuickCash('5')}
+                >
+                  $5
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  style={{ flex: 1, minWidth: '40px', padding: '0.4rem 0.2rem', fontSize: '0.85rem', fontWeight: '700' }}
+                  onClick={() => handleQuickCash('10')}
+                >
+                  $10
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  style={{ flex: 1, minWidth: '40px', padding: '0.4rem 0.2rem', fontSize: '0.85rem', fontWeight: '700' }}
+                  onClick={() => handleQuickCash('20')}
+                >
+                  $20
+                </button>
+              </div>
+
+              {/* Cash Input */}
+              <div className="input" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0 0.85rem' }}>
+                <span style={{ color: 'var(--text-muted)', fontWeight: 'bold', fontSize: '1.2rem' }}>$</span>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                  value={cashTendered}
+                  onChange={e => setCashTendered(e.target.value)}
+                  onBlur={() => {
+                    const num = parseFloat(cashTendered);
+                    if (!isNaN(num)) setCashTendered(num.toFixed(2));
+                  }}
+                  style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold', padding: '0.75rem 0' }}
+                />
+                {cashTendered !== '' && (
+                  <button 
+                    type="button"
+                    onClick={() => setCashTendered('')}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem', padding: '0 0.25rem' }}
+                  >×</button>
+                )}
+              </div>
+
+              {/* Change Due box */}
+              {cashTendered !== '' && !isNaN(parseFloat(cashTendered)) && parseFloat(cashTendered) >= cartTotal && (
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)',
+                  borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem',
+                  fontSize: '1.15rem', fontWeight: 'bold', color: '#6ee7b7'
+                }}>
+                  <span>Change Due</span>
+                  <span>${(parseFloat(cashTendered) - cartTotal).toFixed(2)}</span>
+                </div>
+              )}
+
+              {/* Still Owed box */}
+              {cashTendered !== '' && !isNaN(parseFloat(cashTendered)) && parseFloat(cashTendered) < cartTotal && (
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)',
+                  borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem',
+                  fontSize: '1.15rem', fontWeight: 'bold', color: '#fca5a5'
+                }}>
+                  <span>Still Owed</span>
+                  <span>${(cartTotal - parseFloat(cashTendered)).toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Customer Name */}
             <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Customer Name</label>
               <input
@@ -232,13 +363,14 @@ export default function OrderScreen() {
               />
             </div>
             
+            {/* Priority Checkbox */}
             <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <input
                 type="checkbox"
                 id="priorityCheck"
                 checked={priority}
                 onChange={e => setPriority(e.target.checked)}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--warning)' }}
               />
               <label htmlFor="priorityCheck" style={{ fontSize: '1.1rem', cursor: 'pointer', color: priority ? 'var(--warning)' : 'var(--text-main)', fontWeight: priority ? 'bold' : 'normal' }}>
                 Priority Order 🔥
@@ -249,7 +381,7 @@ export default function OrderScreen() {
               className="btn btn-success"
               style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
               onClick={submitOrder}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || isLocked('submitOrder')}
             >
               Send to Kitchen
             </button>

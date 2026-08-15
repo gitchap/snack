@@ -71,6 +71,7 @@ async function main() {
     data: {
       name: 'Chips',
       price: 1.50,
+      requiresCooking: false,
       categoryId: catSnacks.id,
       options: {
         create: [
@@ -84,6 +85,7 @@ async function main() {
     data: {
       name: 'Soda',
       price: 2.00,
+      requiresCooking: false,
       categoryId: catDrinks.id,
       options: {
         create: [

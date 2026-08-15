@@ -3,12 +3,16 @@ import CustomSelect from './CustomSelect';
 
 export default function ItemEditModal({ item, categories, token, onClose, onSaved }) {
   const [name, setName] = useState(item.name || '');
+  const [price, setPrice] = useState(typeof item.price === 'number' ? item.price.toFixed(2) : (parseFloat(item.price) || 0).toFixed(2));
+  const [requiresCooking, setRequiresCooking] = useState(item.requiresCooking !== false);
   const [categoryId, setCategoryId] = useState(item.categoryId);
   const [options, setOptions] = useState(item.options || []);
 
   // Sync state if item prop changes
   useEffect(() => {
     setName(item.name || '');
+    setPrice(typeof item.price === 'number' ? item.price.toFixed(2) : (parseFloat(item.price) || 0).toFixed(2));
+    setRequiresCooking(item.requiresCooking !== false);
     setCategoryId(item.categoryId);
     setOptions(item.options || []);
   }, [item]);
@@ -63,12 +67,17 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
         if (!ok) return;
       }
 
-      // 3. Save Item Name & Category
+      // 3. Save Item Name, Price, RequiresCooking & Category
       const targetCatId = parseInt(categoryId) || parseInt(item.categoryId);
       const res = await fetch(`/api/admin/menu/${item.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ name: name.trim(), categoryId: targetCatId })
+        body: JSON.stringify({ 
+          name: name.trim(), 
+          price: parseFloat(price) || 0.0,
+          requiresCooking,
+          categoryId: targetCatId 
+        })
       });
 
       if (res.ok) {
@@ -225,6 +234,22 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
             <label style={{ fontWeight: '600', color: 'var(--text-muted)' }}>Item Details</label>
             <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Item Name" />
             <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <div className="input" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: '0 0 130px', padding: '0 0.85rem' }}>
+                <span style={{ color: 'var(--text-muted)', fontWeight: 'bold' }}>$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1rem', fontFamily: 'inherit', padding: '0.75rem 0' }}
+                  value={price}
+                  onChange={e => setPrice(e.target.value)}
+                  onBlur={() => {
+                    const num = parseFloat(price);
+                    if (!isNaN(num)) setPrice(num.toFixed(2));
+                  }}
+                  placeholder="0.00"
+                />
+              </div>
               <div style={{ flex: 1 }}>
                 <CustomSelect
                   options={categories.map(c => ({ value: c.id, label: c.name }))}
@@ -234,6 +259,16 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
                 />
               </div>
             </div>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '0.95rem' }}>
+              <input 
+                type="checkbox" 
+                style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
+                checked={requiresCooking} 
+                onChange={e => setRequiresCooking(e.target.checked)} 
+              />
+              Requires Cooking (Cooked item)
+            </label>
           </div>
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--glass-border)', margin: '0.5rem 0' }} />

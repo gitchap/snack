@@ -105,142 +105,154 @@ export default function KitchenScreen() {
       </div>
       
       <div className="main-content kitchen-grid">
-        {orders.map((order, index) => {
-          const isFirstInQueue = index === 0;
+        {(() => {
+          const kitchenOrders = orders.filter(order => 
+            order.orderItems && order.orderItems.some(item => item.menuItem?.requiresCooking !== false)
+          );
+
           return (
-            <div 
-              key={order.id} 
-              className={`glass glass-card ticket ${order.kitchenStatus === 'ready' ? 'ticket-ready' : 'ticket-pending'}`}
-              style={{
-                borderColor: isFirstInQueue && order.kitchenStatus !== 'ready' ? 'var(--primary)' : undefined,
-                boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
-              }}
-            >
-              <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 0 }}>
-                  {/* Column 1: Queue Badge */}
-                  <span style={{ 
-                    fontSize: '0.85rem', 
-                    padding: '0.25rem 0.55rem',
-                    borderRadius: 'var(--radius-md)', 
-                    background: isFirstInQueue ? 'var(--primary)' : 'var(--glass-border)', 
-                    color: 'var(--text-main)',
-                    fontWeight: '800',
-                    flexShrink: 0,
-                    marginTop: '0.05rem'
-                  }}>
-                    #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
-                  </span>
+            <>
+              {kitchenOrders.map((order, index) => {
+                const isFirstInQueue = index === 0;
+                const cookingItems = (order.orderItems || []).filter(item => item.menuItem?.requiresCooking !== false);
 
-                  {/* Column 2: Name & Fire (Row 1), Ticket Code (Row 2, aligned under Name) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
-                        {order.customerName || formatTicketCode(order.orderNumber)}
-                      </h3>
-                      {order.priority && (
-                        <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔥</span>
-                      )}
-                    </div>
-                    {order.customerName && (
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>
-                        {formatTicketCode(order.orderNumber)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Status badge — right */}
-                {order.kitchenStatus === 'pending' ? (
-                  <span className="badge badge-pending">Cooking</span>
-                ) : (
-                  <span 
-                    className="badge badge-ready" 
-                    title="Tap to Undo Food Ready"
-                    onClick={() => setConfirmUndoOrder(order)}
-                  >
-                    Food Ready ↩
-                  </span>
-                )}
-              </div>
-            
-            <div className="ticket-items">
-              {order.orderItems.map(item => {
-                const isReady = item.kitchenItemStatus === 'ready';
                 return (
                   <div 
-                    key={item.id} 
-                    className="ticket-item" 
-                    style={{ 
-                      flexDirection: 'column',
-                      alignItems: 'stretch',
-                      background: isReady ? 'var(--success-dim)' : 'var(--glass-bg)',
-                      border: isReady ? '1px solid var(--success-border)' : '1px solid var(--glass-border)',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '0.85rem',
-                      transition: 'all 0.2s ease'
+                    key={order.id} 
+                    className={`glass glass-card ticket ${order.kitchenStatus === 'ready' ? 'ticket-ready' : 'ticket-pending'}`}
+                    style={{
+                      borderColor: isFirstInQueue && order.kitchenStatus !== 'ready' ? 'var(--primary)' : undefined,
+                      boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
-                        {/* Qty badge */}
+                    <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 0 }}>
+                        {/* Column 1: Queue Badge */}
                         <span style={{ 
-                          background: 'var(--primary)', 
-                          color: 'var(--text-main)', 
-                          fontWeight: '800', 
-                          fontSize: '1.1rem', 
-                          padding: '0.2rem 0.55rem',
-                          borderRadius: 'var(--radius-md)',
-                          boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
-                          flexShrink: 0
+                          fontSize: '0.85rem', 
+                          padding: '0.25rem 0.55rem',
+                          borderRadius: 'var(--radius-md)', 
+                          background: isFirstInQueue ? 'var(--primary)' : 'var(--glass-border)', 
+                          color: 'var(--text-main)',
+                          fontWeight: '800',
+                          flexShrink: 0,
+                          marginTop: '0.05rem'
                         }}>
-                          {item.quantity}x
+                          #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
                         </span>
-                        <span style={{ 
-                          fontSize: '1.15rem', 
-                          fontWeight: '500', 
-                          color: 'var(--text-main)', 
-                          letterSpacing: '0.01em',
-                          textDecoration: isReady ? 'line-through' : 'none', 
-                          opacity: isReady ? 0.65 : 1,
-                          lineHeight: '1.2'
-                        }}>
-                          {item.menuItem?.name || 'Unknown Item'}
-                        </span>
+
+                        {/* Column 2: Name & Fire (Row 1), Ticket Code (Row 2, aligned under Name) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
+                              {order.customerName || formatTicketCode(order.orderNumber)}
+                            </h3>
+                            {order.priority && (
+                              <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔥</span>
+                            )}
+                          </div>
+                          {order.customerName && (
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>
+                              {formatTicketCode(order.orderNumber)}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <button 
-                        className={`btn ${isReady ? 'btn-success' : 'btn-outline'}`} 
-                        style={{ 
-                          minHeight: 'var(--touch-min)',
-                          padding: '0 1rem',
-                          fontSize: '0.9rem',
-                          fontWeight: '700',
-                          flexShrink: 0
-                        }}
-                        onClick={() => toggleKitchenItem(item.id)}
-                      >
-                        {isReady ? '✓ Ready' : 'Prep'}
-                      </button>
+
+                      {/* Status badge — right */}
+                      {order.kitchenStatus === 'pending' ? (
+                        <span className="badge badge-pending">Cooking...</span>
+                      ) : (
+                        <span 
+                          className="badge badge-ready" 
+                          title="Tap to Undo Food Ready"
+                          onClick={() => setConfirmUndoOrder(order)}
+                        >
+                          Food Ready ↩
+                        </span>
+                      )}
                     </div>
-                    {renderOptions(item.optionsSnapshot)}
+                  
+                    <div className="ticket-items">
+                      {cookingItems.map(item => {
+                        const isReady = item.kitchenItemStatus === 'ready';
+                        return (
+                          <div 
+                            key={item.id} 
+                            className="ticket-item" 
+                            style={{ 
+                              flexDirection: 'column',
+                              alignItems: 'stretch',
+                              background: isReady ? 'var(--success-dim)' : 'var(--glass-bg)',
+                              border: isReady ? '1px solid var(--success-border)' : '1px solid var(--glass-border)',
+                              borderRadius: 'var(--radius-sm)',
+                              padding: '0.85rem',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
+                                {/* Qty badge */}
+                                <span style={{ 
+                                  background: 'var(--primary)', 
+                                  color: 'var(--text-main)', 
+                                  fontWeight: '800', 
+                                  fontSize: '1.1rem', 
+                                  padding: '0.2rem 0.55rem',
+                                  borderRadius: 'var(--radius-md)',
+                                  boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
+                                  flexShrink: 0
+                                }}>
+                                  {item.quantity}x
+                                </span>
+                                <span style={{ 
+                                  fontSize: '1.15rem', 
+                                  fontWeight: '500', 
+                                  color: 'var(--text-main)', 
+                                  letterSpacing: '0.01em',
+                                  textDecoration: isReady ? 'line-through' : 'none', 
+                                  opacity: isReady ? 0.65 : 1,
+                                  lineHeight: '1.2'
+                                }}>
+                                  {item.menuItem?.name || 'Unknown Item'}
+                                </span>
+                              </div>
+                              <button 
+                                className={`btn ${isReady ? 'btn-success' : 'btn-outline'}`} 
+                                style={{ 
+                                  minHeight: 'var(--touch-min)',
+                                  padding: '0 1rem',
+                                  fontSize: '0.9rem',
+                                  fontWeight: '700',
+                                  flexShrink: 0
+                                }}
+                                onClick={() => toggleKitchenItem(item.id)}
+                              >
+                                {isReady ? '✓ Ready' : 'Prep'}
+                              </button>
+                            </div>
+                            {renderOptions(item.optionsSnapshot)}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  
+                    {order.kitchenStatus === 'pending' && (
+                      <button 
+                        className="btn btn-success" 
+                        style={{ marginTop: '1rem', width: '100%' }}
+                        onClick={() => markReady(order.id)}
+                      >
+                        Food Ready
+                      </button>
+                    )}
                   </div>
                 );
               })}
-            </div>
-            
-            {order.kitchenStatus === 'pending' && (
-              <button 
-                className="btn btn-success" 
-                style={{ marginTop: '1rem', width: '100%' }}
-                onClick={() => markReady(order.id)}
-              >
-                Food Ready
-              </button>
-            )}
-          </div>
-        );
-      })}
-        {orders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No active orders</p>}
+              {kitchenOrders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No orders currently in cooking queue</p>}
+            </>
+          );
+        })()}
       </div>
 
       {confirmUndoOrder && (

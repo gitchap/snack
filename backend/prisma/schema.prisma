@@ -28,6 +28,7 @@ model Category {
 model MenuItem {
   id              Int          @id @default(autoincrement())
   name            String
+  price           Float        @default(0.0)
   requiresCooking Boolean      @default(true)
   categoryId      Int
   category        Category     @relation(fields: [categoryId], references: [id])
