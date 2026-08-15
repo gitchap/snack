@@ -188,17 +188,34 @@ export default function KitchenScreen() {
                           </div>
                         </div>
 
-                        {/* Status badge — right */}
+                        {/* Status badge & Undo action — right */}
                         {part.kitchenStatus === 'pending' ? (
                           <span className="badge badge-pending">Cooking...</span>
                         ) : (
-                          <span 
-                            className="badge badge-ready" 
-                            title="Tap to Undo Food Ready"
-                            onClick={() => setConfirmUndoOrder(part)}
-                          >
-                            Food Ready ↩
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
+                            <span className="badge badge-ready" style={{ pointerEvents: 'none', cursor: 'default' }}>
+                              ✓ READY
+                            </span>
+                            <button 
+                              className="btn btn-outline" 
+                              style={{ 
+                                padding: '0.25rem 0.65rem', 
+                                fontSize: '0.82rem', 
+                                height: 'auto', 
+                                minHeight: '34px', 
+                                borderColor: 'rgba(255, 255, 255, 0.25)', 
+                                color: 'var(--text-muted)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.3rem',
+                                borderRadius: 'var(--radius-md)'
+                              }}
+                              onClick={() => setConfirmUndoOrder(part)}
+                              title="Revert to Cooking"
+                            >
+                              ↺ Undo
+                            </button>
+                          </div>
                         )}
                       </div>
                     ) : (
@@ -216,7 +233,7 @@ export default function KitchenScreen() {
                         {part.kitchenStatus === 'pending' ? (
                           <span className="badge badge-pending" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>Cooking...</span>
                         ) : (
-                          <span className="badge badge-ready" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>Food Ready</span>
+                          <span className="badge badge-ready" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', pointerEvents: 'none', cursor: 'default' }}>✓ READY</span>
                         )}
                       </div>
                     )}

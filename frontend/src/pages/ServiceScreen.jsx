@@ -162,7 +162,15 @@ export default function ServiceScreen() {
     }
   };
 
-  const ticketParts = useMeasuredTicketPartition(orders, gridRef);
+  const serviceOrders = orders.filter(order => 
+    order.orderItems && order.orderItems.some(item => item.menuItem?.requiresCooking !== false)
+  );
+
+  const ticketParts = useMeasuredTicketPartition(
+    serviceOrders, 
+    gridRef, 
+    items => items.filter(i => i.menuItem?.requiresCooking !== false)
+  );
 
   return (
     <>
@@ -373,7 +381,7 @@ export default function ServiceScreen() {
                   </div>
                 );
               })}
-              {orders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No active orders</p>}
+              {serviceOrders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No orders currently in service queue</p>}
       </div>
 
       {showHistoryModal && (

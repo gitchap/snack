@@ -699,7 +699,7 @@ io.on('connection', (socket) => {
         return {
           menuItemId: item.menuItemId,
           quantity: item.quantity || 1,
-          itemStatus: 'pending',
+          itemStatus: needsCooking ? 'pending' : 'fulfilled',
           kitchenItemStatus: needsCooking ? 'pending' : 'ready',
           optionsSnapshot: JSON.stringify(item.optionsSnapshot || {})
         };
@@ -707,12 +707,14 @@ io.on('connection', (socket) => {
 
       const anyCookingNeeded = orderItemsCreate.some(i => i.kitchenItemStatus === 'pending');
       const initialKitchenStatus = anyCookingNeeded ? 'pending' : 'ready';
+      const initialOrderStatus = anyCookingNeeded ? 'active' : 'completed';
 
       const newOrder = await prisma.order.create({
         data: {
           orderNumber,
           customerName: data.customerName || null,
           priority: Boolean(data.priority),
+          status: initialOrderStatus,
           kitchenStatus: initialKitchenStatus,
           orderItems: {
             create: orderItemsCreate
@@ -725,7 +727,11 @@ io.on('connection', (socket) => {
         }
       });
       
-      io.emit('new_order', newOrder);
+      if (initialOrderStatus === 'active') {
+        io.emit('new_order', newOrder);
+      } else {
+        io.emit('order_completed', newOrder);
+      }
     } catch (e) {
       console.error(e);
       socket.emit('order_error', { error: 'Failed to place order' });
