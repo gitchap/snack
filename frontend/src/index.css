@@ -536,6 +536,54 @@ input[type="number"] {
   -webkit-column-break-inside: avoid;
 }
 
+/* Kitchen Item Action Buttons */
+.btn-item-prep {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(245, 158, 11, 0.12);
+  border: 2px solid var(--warning);
+  color: #fbbf24;
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 0 0.9rem;
+  min-height: var(--touch-min);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-item-prep:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #f59e0b;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.btn-item-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--success);
+  border: 2px solid var(--success);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.92rem;
+  padding: 0 0.9rem;
+  min-height: var(--touch-min);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);
+}
+
+.btn-item-ready:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
 /* Continued Ticket Indicators */
 .ticket-continuation-footer {
   display: flex;

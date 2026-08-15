@@ -284,17 +284,26 @@ export default function KitchenScreen() {
                                 </span>
                               </div>
                               <button 
-                                className={`btn ${isItemReady ? 'btn-success' : 'btn-outline'}`} 
-                                style={{ 
-                                  minHeight: 'var(--touch-min)',
-                                  padding: '0 1rem',
-                                  fontSize: '0.9rem',
-                                  fontWeight: '700',
-                                  flexShrink: 0
-                                }}
+                                className={isItemReady ? 'btn-item-ready' : 'btn-item-prep'} 
+                                style={{ flexShrink: 0 }}
                                 onClick={() => toggleKitchenItem(item.id)}
+                                title={isItemReady ? 'Tap to mark as Not Ready' : 'Tap to mark Ready'}
                               >
-                                {isItemReady ? '✓ Ready' : 'Prep'}
+                                {isItemReady ? (
+                                  <>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                    <span>Ready</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                      <circle cx="12" cy="12" r="9" />
+                                    </svg>
+                                    <span>Mark Ready</span>
+                                  </>
+                                )}
                               </button>
                             </div>
                             {renderOptions(item.optionsSnapshot)}
