@@ -258,22 +258,10 @@ export default function KitchenScreen() {
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0 }}>
-                                {/* Qty badge */}
-                                <span style={{ 
-                                  background: 'var(--primary)', 
-                                  color: 'var(--text-main)', 
-                                  fontWeight: '800', 
-                                  fontSize: '1.1rem', 
-                                  padding: '0.2rem 0.55rem',
-                                  borderRadius: 'var(--radius-md)',
-                                  boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
-                                  flexShrink: 0
-                                }}>
-                                  {item.quantity}x
-                                </span>
+                                <span className="item-bullet" />
                                 <span style={{ 
                                   fontSize: '1.15rem', 
-                                  fontWeight: '500', 
+                                  fontWeight: '600', 
                                   color: 'var(--text-main)', 
                                   letterSpacing: '0.01em',
                                   textDecoration: isItemReady ? 'line-through' : 'none', 

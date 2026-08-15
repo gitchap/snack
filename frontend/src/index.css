@@ -502,6 +502,17 @@ input[type="number"] {
   width: 100%;
 }
 
+.item-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: inline-block;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(139, 92, 246, 0.6);
+  margin-right: 0.2rem;
+}
+
 .ticket-item-actions {
   display: flex;
   justify-content: space-between;

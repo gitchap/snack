@@ -295,20 +295,8 @@ export default function ServiceScreen() {
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
-                                {/* Qty badge */}
-                                <span style={{ 
-                                  background: 'var(--primary)', 
-                                  color: 'var(--text-main)', 
-                                  fontWeight: '800', 
-                                  fontSize: '1.1rem', 
-                                  padding: '0.2rem 0.55rem',
-                                  borderRadius: 'var(--radius-md)', 
-                                  boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
-                                  flexShrink: 0
-                                }}>
-                                  {item.quantity}x
-                                </span>
-                                <span style={{ fontSize: '1.15rem', fontWeight: '500', color: 'var(--text-main)', letterSpacing: '0.01em', lineHeight: '1.2' }}>
+                                <span className="item-bullet" />
+                                <span style={{ fontSize: '1.15rem', fontWeight: '600', color: 'var(--text-main)', letterSpacing: '0.01em', lineHeight: '1.2' }}>
                                   {item.menuItem?.name || 'Unknown'}
                                 </span>
 
@@ -408,7 +396,7 @@ export default function ServiceScreen() {
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(order.createdAt).toLocaleTimeString()}</span>
                   </div>
                   <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                    {(order.orderItems || []).map(i => `${i.quantity}x ${i.menuItem?.name || 'Item'}`).join(', ')}
+                    {(order.orderItems || []).map(i => i.menuItem?.name || 'Item').join(' • ')}
                   </div>
                   <button 
                     className="btn btn-primary" 
