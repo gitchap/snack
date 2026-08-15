@@ -12,11 +12,10 @@ dist
 build
 **/build
 
-# Databases & local data
-*.db
+# Databases & SQLite temporary files
 *.db-journal
-backend/prisma/*.db
-backend/prisma/*.db-journal
+*.db-wal
+*.db-shm
 
 # Environment variables & secrets
 .env

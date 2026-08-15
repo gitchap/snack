@@ -15,15 +15,11 @@ build/
 **/dist/
 **/build/
 
-# Databases & SQLite data
-*.db
+# Databases & SQLite temporary files (keep backend/prisma/dev.db synced, ignore runtime journals/locks)
 *.db-journal
 *.db-wal
 *.db-shm
-*.sqlite
-*.sqlite3
-backend/dev.db*
-backend/prisma/*.db*
+backend/dev.db
 
 # Environment & Secrets
 .env
