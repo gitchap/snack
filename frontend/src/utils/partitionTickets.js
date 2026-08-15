@@ -11,29 +11,29 @@ export function partitionOrderItems(order, availableHeight, filterItemsFn) {
   const items = filterItemsFn ? filterItemsFn(allItems) : allItems;
   if (!items || items.length === 0) return [];
 
-  // Calibrated CSS layout constants (in pixels) based on Snack Shack design tokens:
-  // - .ticket card padding (1.5rem x 2) + border: 52px
-  // - .ticket-header (title, queue badge, subtext, status): 72px
-  // - .ticket-continuation-header: 56px
-  // - .ticket-item base (44px touch-min button + 28px padding + 2px border + 8px margin): 82px
-  // - .options-list (title, chips, spacing): ~50px per option group
-  // - .ticket-continuation-footer ("⬇ Continues in next column ➔"): 50px
-  // - Action button ("Food Ready" / "Complete Order") + margin: 58px
-  // - Column bottom safety buffer: 28px
-  const CARD_CHROME_HEIGHT = 52;
-  const MAIN_HEADER_HEIGHT = 72;
-  const CONT_HEADER_HEIGHT = 56;
-  const ACTION_BTN_HEIGHT = 58;
-  const CONT_FOOTER_HEIGHT = 50;
-  const COLUMN_SAFETY_BUFFER = 28;
+  // Robust cross-platform layout constants (in pixels) for Firefox Linux, Edge, Chrome, Safari:
+  // - .ticket card padding (1.5rem x 2) + border: 60px
+  // - .ticket-header (title, queue badge, subtext, status): 78px
+  // - .ticket-continuation-header: 58px
+  // - .ticket-item base (44px touch-min button + 28px padding + 2px border + 8px margin + line-height buffer): 88px
+  // - .options-list (title, chips, spacing): ~52px per option group
+  // - .ticket-continuation-footer ("⬇ Continues in next column ➔"): 54px
+  // - Action button ("Food Ready" / "Complete Order") + margin: 64px
+  // - Column bottom safety buffer: 55px
+  const CARD_CHROME_HEIGHT = 60;
+  const MAIN_HEADER_HEIGHT = 78;
+  const CONT_HEADER_HEIGHT = 58;
+  const ACTION_BTN_HEIGHT = 64;
+  const CONT_FOOTER_HEIGHT = 54;
+  const COLUMN_SAFETY_BUFFER = 55;
 
   const estimateItemHeight = (item) => {
-    let itemHeight = 82; // base single item with quantity badge, title, button
+    let itemHeight = 88; // base single item with title, bullet, and button
     try {
       const snap = typeof item.optionsSnapshot === 'string' ? JSON.parse(item.optionsSnapshot) : item.optionsSnapshot;
       if (snap && typeof snap === 'object') {
         const optionGroups = Object.entries(snap).filter(([_, val]) => Array.isArray(val) && val.length > 0);
-        itemHeight += optionGroups.length * 50;
+        itemHeight += optionGroups.length * 52;
       }
     } catch (_) {}
     return itemHeight;
