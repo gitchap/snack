@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import useFavicon from '../hooks/useFavicon';
 import { formatTicketCode } from '../utils/formatTicket';
 import { useActionLock } from '../hooks/useActionLock';
-import { partitionOrderItems } from '../utils/partitionTickets';
+import { useMeasuredTicketPartition } from '../utils/partitionTickets';
 
 export default function KitchenScreen() {
   useFavicon('kitchen.png', 'Kitchen Display - Snack Shack');
@@ -14,30 +14,6 @@ export default function KitchenScreen() {
   const [orders, setOrders] = useState([]);
   const [confirmUndoOrder, setConfirmUndoOrder] = useState(null);
   const gridRef = useRef(null);
-  const [gridHeight, setGridHeight] = useState(typeof window !== 'undefined' ? window.innerHeight - 100 : 800);
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (gridRef.current) {
-        setGridHeight(gridRef.current.clientHeight);
-      } else {
-        setGridHeight(window.innerHeight - 100);
-      }
-    };
-
-    updateHeight();
-    window.addEventListener('resize', updateHeight);
-    let observer;
-    if (window.ResizeObserver && gridRef.current) {
-      observer = new ResizeObserver(() => updateHeight());
-      observer.observe(gridRef.current);
-    }
-
-    return () => {
-      window.removeEventListener('resize', updateHeight);
-      if (observer) observer.disconnect();
-    };
-  }, []);
 
   useEffect(() => {
     fetch('/api/orders/active')
@@ -120,6 +96,16 @@ export default function KitchenScreen() {
     }
   };
 
+  const kitchenOrders = orders.filter(order => 
+    order.orderItems && order.orderItems.some(item => item.menuItem?.requiresCooking !== false)
+  );
+
+  const ticketParts = useMeasuredTicketPartition(
+    kitchenOrders, 
+    gridRef, 
+    items => items.filter(item => item.menuItem?.requiresCooking !== false)
+  );
+
   return (
     <>
       <div className="topbar glass">
@@ -131,39 +117,20 @@ export default function KitchenScreen() {
       </div>
       
       <div ref={gridRef} className="main-content kitchen-grid">
-        {(() => {
-          const kitchenOrders = orders.filter(order => 
-            order.orderItems && order.orderItems.some(item => item.menuItem?.requiresCooking !== false)
-          );
-
-          // Partition each order dynamically based on measured screen/container height
-          const ticketParts = [];
-          kitchenOrders.forEach((order, queueIndex) => {
-            const parts = partitionOrderItems(
-              order, 
-              gridHeight, 
-              items => items.filter(item => item.menuItem?.requiresCooking !== false)
-            );
-            parts.forEach(part => {
-              ticketParts.push({ ...part, queueIndex });
-            });
-          });
+        {ticketParts.map((part) => {
+          const isFirstInQueue = part.queueIndex === 0;
+          const isReady = part.kitchenStatus === 'ready';
 
           return (
-            <>
-              {ticketParts.map((part) => {
-                const isFirstInQueue = part.queueIndex === 0;
-                const isReady = part.kitchenStatus === 'ready';
-
-                return (
-                  <div 
-                    key={part.cardPartKey} 
-                    className={`glass glass-card ticket ${isReady ? 'ticket-ready' : 'ticket-pending'}`}
-                    style={{
-                      borderColor: isFirstInQueue && !isReady ? 'var(--primary)' : undefined,
-                      boxShadow: isFirstInQueue && !isReady ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
-                    }}
-                  >
+            <div 
+              key={part.cardPartKey} 
+              data-order-id={part.id}
+              className={`glass glass-card ticket ${isReady ? 'ticket-ready' : 'ticket-pending'}`}
+              style={{
+                borderColor: isFirstInQueue && !isReady ? 'var(--primary)' : undefined,
+                boxShadow: isFirstInQueue && !isReady ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
+              }}
+            >
                     {/* Header: First Part vs Continuation Part */}
                     {!part.isContinuation ? (
                       <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -245,6 +212,7 @@ export default function KitchenScreen() {
                         return (
                           <div 
                             key={item.id} 
+                            data-item-id={item.id}
                             className="ticket-item" 
                             style={{ 
                               flexDirection: 'column',
@@ -321,9 +289,6 @@ export default function KitchenScreen() {
                 );
               })}
               {kitchenOrders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No orders currently in cooking queue</p>}
-            </>
-          );
-        })()}
       </div>
 
       {confirmUndoOrder && (

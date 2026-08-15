@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import useFavicon from '../hooks/useFavicon';
 import { formatTicketCode } from '../utils/formatTicket';
 import { useActionLock } from '../hooks/useActionLock';
-import { partitionOrderItems } from '../utils/partitionTickets';
+import { useMeasuredTicketPartition } from '../utils/partitionTickets';
 
 export default function ServiceScreen() {
   useFavicon('service.png', 'Service Display - Snack Shack');
@@ -15,30 +15,6 @@ export default function ServiceScreen() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyOrders, setHistoryOrders] = useState([]);
   const gridRef = useRef(null);
-  const [gridHeight, setGridHeight] = useState(typeof window !== 'undefined' ? window.innerHeight - 100 : 800);
-
-  useEffect(() => {
-    const updateHeight = () => {
-      if (gridRef.current) {
-        setGridHeight(gridRef.current.clientHeight);
-      } else {
-        setGridHeight(window.innerHeight - 100);
-      }
-    };
-
-    updateHeight();
-    window.addEventListener('resize', updateHeight);
-    let observer;
-    if (window.ResizeObserver && gridRef.current) {
-      observer = new ResizeObserver(() => updateHeight());
-      observer.observe(gridRef.current);
-    }
-
-    return () => {
-      window.removeEventListener('resize', updateHeight);
-      if (observer) observer.disconnect();
-    };
-  }, []);
 
   useEffect(() => {
     fetch('/api/orders/active')
@@ -170,6 +146,8 @@ export default function ServiceScreen() {
     }
   };
 
+  const ticketParts = useMeasuredTicketPartition(orders, gridRef);
+
   return (
     <>
       <div className="topbar glass">
@@ -182,31 +160,20 @@ export default function ServiceScreen() {
       </div>
       
       <div ref={gridRef} className="main-content service-grid">
-        {(() => {
-          // Partition each active order dynamically based on measured screen/container height
-          const ticketParts = [];
-          orders.forEach((order, queueIndex) => {
-            const parts = partitionOrderItems(order, gridHeight);
-            parts.forEach(part => {
-              ticketParts.push({ ...part, queueIndex });
-            });
-          });
+        {ticketParts.map((part) => {
+          const isFirstInQueue = part.queueIndex === 0;
+          const isFoodReady = part.kitchenStatus === 'ready';
 
           return (
-            <>
-              {ticketParts.map((part) => {
-                const isFirstInQueue = part.queueIndex === 0;
-                const isFoodReady = part.kitchenStatus === 'ready';
-
-                return (
-                  <div 
-                    key={part.cardPartKey} 
-                    className={`glass glass-card ticket ${isFoodReady ? 'ticket-ready' : 'ticket-pending'}`}
-                    style={{
-                      borderColor: isFirstInQueue && !isFoodReady ? 'var(--primary)' : undefined,
-                      boxShadow: isFirstInQueue && !isFoodReady ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
-                    }}
-                  >
+            <div 
+              key={part.cardPartKey} 
+              data-order-id={part.id}
+              className={`glass glass-card ticket ${isFoodReady ? 'ticket-ready' : 'ticket-pending'}`}
+              style={{
+                borderColor: isFirstInQueue && !isFoodReady ? 'var(--primary)' : undefined,
+                boxShadow: isFirstInQueue && !isFoodReady ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
+              }}
+            >
                     {/* Header: First Part vs Continuation Part */}
                     {!part.isContinuation ? (
                       <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -283,6 +250,7 @@ export default function ServiceScreen() {
                         return (
                           <div 
                             key={item.id} 
+                            data-item-id={item.id}
                             className={`ticket-item ${item.itemStatus === 'fulfilled' ? 'fulfilled' : ''}`}
                             style={{ 
                               flexDirection: 'column', 
@@ -375,9 +343,6 @@ export default function ServiceScreen() {
                 );
               })}
               {orders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No active orders</p>}
-            </>
-          );
-        })()}
       </div>
 
       {showHistoryModal && (
