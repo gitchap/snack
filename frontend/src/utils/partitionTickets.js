@@ -1,8 +1,8 @@
-import { useState, useLayoutEffect, useEffect } from 'react';
+import { useState, useLayoutEffect, useEffect, useRef } from 'react';
 
 /**
  * Custom hook that partitions tickets across columns based on REAL rendered DOM measurements.
- * Zero guesswork or hardcoded height formulas.
+ * Includes smooth resize debouncing, global item height caching, and zero-disappearing safeguards.
  * 
  * @param {Array} orders - Active orders array
  * @param {React.RefObject} gridRef - Ref to the .kitchen-grid / .service-grid container
@@ -11,61 +11,64 @@ import { useState, useLayoutEffect, useEffect } from 'react';
  */
 export function useMeasuredTicketPartition(orders, gridRef, filterItemsFn) {
   const [partitions, setPartitions] = useState({});
+  const rafRef = useRef(null);
+  // Cache measured item heights across renders to avoid missing heights when cards are split
+  const itemHeightCache = useRef({});
 
   const measureAndPartition = () => {
     if (!gridRef.current) return;
     const container = gridRef.current;
-    const containerHeight = container.clientHeight;
-    if (!containerHeight || containerHeight <= 0) return;
+    const containerHeight = container.clientHeight || (typeof window !== 'undefined' ? window.innerHeight - 100 : 750);
+    
+    // Safety clamp: Never let availableHeight drop below 280px so cards never crash/disappear
+    const availableHeight = Math.max(containerHeight - 24, 280);
 
-    // 24px safety breathing room above the container bottom
-    const availableHeight = containerHeight - 24;
+    // 1. Collect all real rendered item heights from the entire container DOM
+    const allRenderedItems = container.querySelectorAll('[data-item-id]');
+    allRenderedItems.forEach(el => {
+      const itemId = el.getAttribute('data-item-id');
+      const rect = el.getBoundingClientRect();
+      if (rect.height > 0) {
+        itemHeightCache.current[itemId] = rect.height + 8; // real height + gap
+      }
+    });
+
     const newPartitions = {};
 
     orders.forEach((order) => {
       const allItems = order.orderItems || [];
       const items = filterItemsFn ? filterItemsFn(allItems) : allItems;
       if (!items || items.length === 0) {
-        newPartitions[order.id] = [[]];
         return;
       }
 
-      // Query the rendered card in the DOM
-      const cardEl = container.querySelector(`[data-order-id="${order.id}"]`);
-      if (!cardEl) {
+      // If only 1 item, it always fits in 1 card
+      if (items.length <= 1) {
         newPartitions[order.id] = [items];
         return;
       }
 
-      // Check if all items in this order are rendered in a single card
-      const renderedItemEls = cardEl.querySelectorAll(`[data-item-id]`);
-      const itemHeights = {};
-      renderedItemEls.forEach(el => {
-        const itemId = el.getAttribute('data-item-id');
-        // Real rendered height + margin/gap
-        itemHeights[itemId] = el.getBoundingClientRect().height + 8;
-      });
-
-      const headerEl = cardEl.querySelector('.ticket-header') || cardEl.querySelector('.ticket-continuation-header');
-      const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 60;
-      const contFooterHeight = 48; // "⬇ Continues in next column ➔" banner
-      const cardChrome = 48; // card padding & borders
-
-      // Calculate total real height of all items
+      // Calculate total real height of all items in this order
       let totalItemsHeight = 0;
       items.forEach(item => {
-        totalItemsHeight += itemHeights[item.id] || 75;
+        const h = itemHeightCache.current[item.id] || 78;
+        totalItemsHeight += h;
       });
 
-      const totalSingleCardHeight = cardChrome + headerHeight + totalItemsHeight + 54; // 54px action button
+      const cardChrome = 48;
+      const headerHeight = 68;
+      const actionBtnHeight = 56;
+      const contFooterHeight = 48;
 
-      // If the entire card fits inside the measured container height, keep as 1 card
-      if (totalSingleCardHeight <= availableHeight || items.length <= 1) {
+      const totalSingleCardHeight = cardChrome + headerHeight + totalItemsHeight + actionBtnHeight;
+
+      // If the entire card fits inside the measured container height, keep as 1 whole card
+      if (totalSingleCardHeight <= availableHeight) {
         newPartitions[order.id] = [items];
         return;
       }
 
-      // Otherwise, partition dynamically using the EXACT measured item heights
+      // Otherwise, partition dynamically into parts based on real measured item heights
       const chunks = [];
       let currentChunk = [];
       let currentHeight = 0;
@@ -73,9 +76,9 @@ export function useMeasuredTicketPartition(orders, gridRef, filterItemsFn) {
 
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        const h = itemHeights[item.id] || 75;
-        const currentHeaderH = isFirst ? headerHeight : 50;
-        const maxBudget = availableHeight - cardChrome - currentHeaderH - contFooterHeight;
+        const h = itemHeightCache.current[item.id] || 78;
+        const currentHeaderH = isFirst ? headerHeight : 52;
+        const maxBudget = Math.max(availableHeight - cardChrome - currentHeaderH - contFooterHeight, 140);
 
         if (currentChunk.length > 0 && (currentHeight + h > maxBudget)) {
           chunks.push(currentChunk);
@@ -101,7 +104,7 @@ export function useMeasuredTicketPartition(orders, gridRef, filterItemsFn) {
         const oldChunks = prev[id];
         const nextChunks = newPartitions[id];
         if (!oldChunks || oldChunks.length !== nextChunks.length) return true;
-        return oldChunks.some((c, idx) => c.length !== nextChunks[idx].length);
+        return oldChunks.some((c, idx) => c.length !== (nextChunks[idx] ? nextChunks[idx].length : 0));
       });
       return isDifferent ? newPartitions : prev;
     });
@@ -116,7 +119,10 @@ export function useMeasuredTicketPartition(orders, gridRef, filterItemsFn) {
     const container = gridRef.current;
 
     const handleResize = () => {
-      measureAndPartition();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        measureAndPartition();
+      });
     };
 
     window.addEventListener('resize', handleResize);
@@ -127,22 +133,25 @@ export function useMeasuredTicketPartition(orders, gridRef, filterItemsFn) {
     }
 
     return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       window.removeEventListener('resize', handleResize);
       if (observer) observer.disconnect();
     };
   }, [orders, gridRef.current]);
 
-  // Build flattened parts array
+  // Build flattened parts array with bulletproof fallbacks
   const flatParts = [];
   orders.forEach((order, queueIndex) => {
     const allItems = order.orderItems || [];
     const items = filterItemsFn ? filterItemsFn(allItems) : allItems;
     if (!items || items.length === 0) return;
 
-    const chunks = partitions[order.id] || [items];
+    const rawChunks = partitions[order.id];
+    const chunks = Array.isArray(rawChunks) && rawChunks.length > 0 ? rawChunks : [items];
     const totalParts = chunks.length;
 
     chunks.forEach((chunkItems, partIdx) => {
+      if (!chunkItems || chunkItems.length === 0) return;
       flatParts.push({
         ...order,
         cardPartKey: `${order.id}-part-${partIdx + 1}`,
