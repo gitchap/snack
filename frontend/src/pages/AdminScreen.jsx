@@ -672,14 +672,11 @@ export default function AdminScreen() {
                 <input 
                   type="password" 
                   className="input" 
-                  placeholder="Enter server Master Admin Password" 
+                  placeholder="Enter Master Password" 
                   value={masterPassword} 
                   onChange={e => setMasterPassword(e.target.value)} 
                   autoComplete="current-password"
                 />
-                <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                  Configured in server <code>.env</code> (<code>ADMIN_MASTER_PASSWORD</code>) to protect against unauthorized PIN modifications.
-                </span>
               </div>
               <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem', padding: '0.9rem', fontSize: '1.05rem', fontWeight: '700' }}>
                 Update PIN
