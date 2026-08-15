@@ -139,25 +139,36 @@ export function useMeasuredTicketPartition(orders, gridRef, filterItemsFn) {
     };
   }, [orders, gridRef.current]);
 
-  // Build flattened parts array with bulletproof fallbacks
+  // Build flattened parts array with fresh item references from latest order state
   const flatParts = [];
   orders.forEach((order, queueIndex) => {
     const allItems = order.orderItems || [];
     const items = filterItemsFn ? filterItemsFn(allItems) : allItems;
     if (!items || items.length === 0) return;
 
+    const itemMap = new Map(items.map(i => [i.id, i]));
     const rawChunks = partitions[order.id];
-    const chunks = Array.isArray(rawChunks) && rawChunks.length > 0 ? rawChunks : [items];
-    const totalParts = chunks.length;
 
-    chunks.forEach((chunkItems, partIdx) => {
-      if (!chunkItems || chunkItems.length === 0) return;
+    let chunkItemIds = [];
+    if (Array.isArray(rawChunks) && rawChunks.length > 0) {
+      chunkItemIds = rawChunks.map(chunk => chunk.map(i => (typeof i === 'object' ? i.id : i)));
+    } else {
+      chunkItemIds = [items.map(i => i.id)];
+    }
+
+    const totalParts = chunkItemIds.length;
+
+    chunkItemIds.forEach((ids, partIdx) => {
+      // Re-hydrate chunk with the latest live item objects from the active order
+      const liveItems = ids.map(id => itemMap.get(id)).filter(Boolean);
+      if (liveItems.length === 0) return;
+
       flatParts.push({
         ...order,
         cardPartKey: `${order.id}-part-${partIdx + 1}`,
         partIndex: partIdx + 1,
         totalParts,
-        partitionedItems: chunkItems,
+        partitionedItems: liveItems,
         hasContinuationAfter: partIdx < totalParts - 1,
         isContinuation: partIdx > 0,
         queueIndex
