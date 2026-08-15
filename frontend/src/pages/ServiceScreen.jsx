@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { SocketContext, AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import useFavicon from '../hooks/useFavicon';
 import { formatTicketCode } from '../utils/formatTicket';
 import { useActionLock } from '../hooks/useActionLock';
+import { partitionOrderItems } from '../utils/partitionTickets';
 
 export default function ServiceScreen() {
   useFavicon('service.png', 'Service Display - Snack Shack');
@@ -13,6 +14,31 @@ export default function ServiceScreen() {
   const [orders, setOrders] = useState([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyOrders, setHistoryOrders] = useState([]);
+  const gridRef = useRef(null);
+  const [gridHeight, setGridHeight] = useState(typeof window !== 'undefined' ? window.innerHeight - 100 : 800);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (gridRef.current) {
+        setGridHeight(gridRef.current.clientHeight);
+      } else {
+        setGridHeight(window.innerHeight - 100);
+      }
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    let observer;
+    if (window.ResizeObserver && gridRef.current) {
+      observer = new ResizeObserver(() => updateHeight());
+      observer.observe(gridRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateHeight);
+      if (observer) observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     fetch('/api/orders/active')
@@ -155,164 +181,215 @@ export default function ServiceScreen() {
         </div>
       </div>
       
-      <div className="main-content service-grid">
-        {orders.map((order, index) => {
-          const isFirstInQueue = index === 0;
-          return (
-            <div 
-              key={order.id} 
-              className={`glass glass-card ticket ${order.kitchenStatus === 'ready' ? 'ticket-ready' : 'ticket-pending'}`}
-              style={{
-                borderColor: isFirstInQueue && order.kitchenStatus !== 'ready' ? 'var(--primary)' : undefined,
-                boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
-              }}
-            >
-              <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 0 }}>
-                  {/* Column 1: Queue Badge */}
-                  <span style={{ 
-                    fontSize: '0.85rem', 
-                    padding: '0.25rem 0.55rem',
-                    borderRadius: 'var(--radius-md)', 
-                    background: isFirstInQueue ? 'var(--primary)' : 'var(--glass-border)', 
-                    color: 'var(--text-main)',
-                    fontWeight: '800',
-                    flexShrink: 0,
-                    marginTop: '0.05rem'
-                  }}>
-                    #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
-                  </span>
+      <div ref={gridRef} className="main-content service-grid">
+        {(() => {
+          // Partition each active order dynamically based on measured screen/container height
+          const ticketParts = [];
+          orders.forEach((order, queueIndex) => {
+            const parts = partitionOrderItems(order, gridHeight);
+            parts.forEach(part => {
+              ticketParts.push({ ...part, queueIndex });
+            });
+          });
 
-                  {/* Column 2: Name & Fire (Row 1), Ticket Code (Row 2, aligned under Name) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
-                        {order.customerName || formatTicketCode(order.orderNumber)}
-                      </h3>
-                      {order.priority && (
-                        <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔥</span>
-                      )}
+          return (
+            <>
+              {ticketParts.map((part) => {
+                const isFirstInQueue = part.queueIndex === 0;
+                const isFoodReady = part.kitchenStatus === 'ready';
+
+                return (
+                  <div 
+                    key={part.cardPartKey} 
+                    className={`glass glass-card ticket ${isFoodReady ? 'ticket-ready' : 'ticket-pending'}`}
+                    style={{
+                      borderColor: isFirstInQueue && !isFoodReady ? 'var(--primary)' : undefined,
+                      boxShadow: isFirstInQueue && !isFoodReady ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
+                    }}
+                  >
+                    {/* Header: First Part vs Continuation Part */}
+                    {!part.isContinuation ? (
+                      <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 0 }}>
+                          {/* Column 1: Queue Badge */}
+                          <span style={{ 
+                            fontSize: '0.85rem', 
+                            padding: '0.25rem 0.55rem',
+                            borderRadius: 'var(--radius-md)', 
+                            background: isFirstInQueue ? 'var(--primary)' : 'var(--glass-border)', 
+                            color: 'var(--text-main)',
+                            fontWeight: '800',
+                            flexShrink: 0,
+                            marginTop: '0.05rem'
+                          }}>
+                            #{part.queueIndex + 1} {isFirstInQueue ? 'NEXT' : ''}
+                          </span>
+
+                          {/* Column 2: Name & Fire (Row 1), Ticket Code & Part Badge (Row 2) */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                              <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
+                                {part.customerName || formatTicketCode(part.orderNumber)}
+                              </h3>
+                              {part.priority && (
+                                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔥</span>
+                              )}
+                              {part.totalParts > 1 && (
+                                <span className="badge-cont" style={{ fontSize: '0.72rem', padding: '0.15rem 0.4rem' }}>
+                                  Part 1/{part.totalParts}
+                                </span>
+                              )}
+                            </div>
+                            {part.customerName && (
+                              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>
+                                {formatTicketCode(part.orderNumber)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Status badge — right */}
+                        {part.kitchenStatus === 'pending' ? (
+                          <span className="badge badge-pending">Cooking...</span>
+                        ) : (
+                          <span className="badge badge-ready">Food Ready</span>
+                        )}
+                      </div>
+                    ) : (
+                      /* Continuation Top Header */
+                      <div className="ticket-continuation-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', minWidth: 0 }}>
+                          <span className="badge-cont">#{part.queueIndex + 1} (Cont.)</span>
+                          <strong style={{ fontSize: '1.15rem', color: 'var(--text-main)' }}>
+                            {part.customerName || formatTicketCode(part.orderNumber)}
+                          </strong>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                            Part {part.partIndex} of {part.totalParts}
+                          </span>
+                        </div>
+                        {part.kitchenStatus === 'pending' ? (
+                          <span className="badge badge-pending" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>Cooking...</span>
+                        ) : (
+                          <span className="badge badge-ready" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>Food Ready</span>
+                        )}
+                      </div>
+                    )}
+                  
+                    {/* Items for this part */}
+                    <div className="ticket-items">
+                      {part.partitionedItems.map(item => {
+                        const isGrabAndGo = item.menuItem && item.menuItem.requiresCooking === false;
+
+                        return (
+                          <div 
+                            key={item.id} 
+                            className={`ticket-item ${item.itemStatus === 'fulfilled' ? 'fulfilled' : ''}`}
+                            style={{ 
+                              flexDirection: 'column', 
+                              alignItems: 'stretch',
+                              background: 'var(--glass-bg)',
+                              border: '1px solid var(--glass-border)',
+                              borderRadius: 'var(--radius-sm)',
+                              padding: '0.85rem'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
+                                {/* Qty badge */}
+                                <span style={{ 
+                                  background: 'var(--primary)', 
+                                  color: 'var(--text-main)', 
+                                  fontWeight: '800', 
+                                  fontSize: '1.1rem', 
+                                  padding: '0.2rem 0.55rem',
+                                  borderRadius: 'var(--radius-md)', 
+                                  boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
+                                  flexShrink: 0
+                                }}>
+                                  {item.quantity}x
+                                </span>
+                                <span style={{ fontSize: '1.15rem', fontWeight: '500', color: 'var(--text-main)', letterSpacing: '0.01em', lineHeight: '1.2' }}>
+                                  {item.menuItem?.name || 'Unknown'}
+                                </span>
+
+                                {isGrabAndGo ? (
+                                  <span className="badge badge-shelf" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                    🛍️ Grab & Go
+                                  </span>
+                                ) : item.kitchenItemStatus === 'ready' ? (
+                                  <span className="badge badge-done" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                    ✓ Food Ready
+                                  </span>
+                                ) : (
+                                  <span className="badge badge-kitchen" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                    🍳 Cooking...
+                                  </span>
+                                )}
+                              </div>
+
+                              {item.itemStatus === 'pending' ? (
+                                <button 
+                                  className="btn btn-primary" 
+                                  style={{ 
+                                    minHeight: 'var(--touch-min)',
+                                    padding: '0 1rem',
+                                    fontSize: '0.95rem',
+                                    fontWeight: '700',
+                                    flexShrink: 0
+                                  }}
+                                  onClick={() => fulfillItem(item.id)}
+                                >
+                                  Hand Off
+                                </button>
+                              ) : (
+                                <button 
+                                  className="btn btn-outline undo-item-btn" 
+                                  title="Undo Hand Off"
+                                  aria-label="Undo Hand Off"
+                                  style={{ 
+                                    width: 'var(--touch-min)',
+                                    height: 'var(--touch-min)',
+                                    minWidth: 'var(--touch-min)',
+                                    minHeight: 'var(--touch-min)',
+                                    padding: 0,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: 'var(--radius-sm)',
+                                    flexShrink: 0,
+                                    background: 'rgba(255, 255, 255, 0.08)',
+                                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                                    color: '#ffffff',
+                                    cursor: 'pointer'
+                                  }}
+                                  onClick={() => unfulfillItem(item.id)}
+                                >
+                                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 7v6h6" />
+                                    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                            {renderOptions(item.optionsSnapshot)}
+                          </div>
+                        );
+                      })}
                     </div>
-                    {order.customerName && (
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>
-                        {formatTicketCode(order.orderNumber)}
+
+                    {/* Bottom Continuation Banner */}
+                    {part.hasContinuationAfter && (
+                      <div className="ticket-continuation-footer">
+                        <span>⬇ Continues in next column ➔</span>
                       </div>
                     )}
                   </div>
-                </div>
-
-                {/* Status badge — right */}
-                {order.kitchenStatus === 'pending' ? (
-                  <span className="badge badge-pending">Cooking...</span>
-                ) : (
-                  <span className="badge badge-ready">Food Ready</span>
-                )}
-              </div>
-            
-            <div className="ticket-items">
-              {order.orderItems.map(item => {
-                const isGrabAndGo = item.menuItem && item.menuItem.requiresCooking === false;
-
-                return (
-                <div 
-                  key={item.id} 
-                  className={`ticket-item ${item.itemStatus === 'fulfilled' ? 'fulfilled' : ''}`}
-                  style={{ 
-                    flexDirection: 'column', 
-                    alignItems: 'stretch',
-                    background: 'var(--glass-bg)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.85rem'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 0, flexWrap: 'wrap' }}>
-                      {/* Qty badge */}
-                      <span style={{ 
-                        background: 'var(--primary)', 
-                        color: 'var(--text-main)', 
-                        fontWeight: '800', 
-                        fontSize: '1.1rem', 
-                        padding: '0.2rem 0.55rem',
-                        borderRadius: 'var(--radius-md)', 
-                        boxShadow: '0 2px 6px rgba(139, 92, 246, 0.35)',
-                        flexShrink: 0
-                      }}>
-                        {item.quantity}x
-                      </span>
-                      <span style={{ fontSize: '1.15rem', fontWeight: '500', color: 'var(--text-main)', letterSpacing: '0.01em', lineHeight: '1.2' }}>
-                        {item.menuItem?.name || 'Unknown'}
-                      </span>
-
-                      {isGrabAndGo ? (
-                        <span className="badge badge-shelf" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          🛍️ Grab & Go
-                        </span>
-                      ) : item.kitchenItemStatus === 'ready' ? (
-                        <span className="badge badge-done" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          ✓ Food Ready
-                        </span>
-                      ) : (
-                        <span className="badge badge-kitchen" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                          🍳 Cooking...
-                        </span>
-                      )}
-                    </div>
-
-                    {item.itemStatus === 'pending' ? (
-                      <button 
-                        className="btn btn-primary" 
-                        style={{ 
-                          minHeight: 'var(--touch-min)',
-                          padding: '0 1rem',
-                          fontSize: '0.95rem',
-                          fontWeight: '700',
-                          flexShrink: 0
-                        }}
-                        onClick={() => fulfillItem(item.id)}
-                      >
-                        Hand Off
-                      </button>
-                    ) : (
-                      <button 
-                        className="btn btn-outline undo-item-btn" 
-                        title="Undo Hand Off"
-                        aria-label="Undo Hand Off"
-                        style={{ 
-                          width: 'var(--touch-min)',
-                          height: 'var(--touch-min)',
-                          minWidth: 'var(--touch-min)',
-                          minHeight: 'var(--touch-min)',
-                          padding: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: 'var(--radius-sm)',
-                          flexShrink: 0,
-                          background: 'rgba(255, 255, 255, 0.08)',
-                          borderColor: 'rgba(255, 255, 255, 0.2)',
-                          color: '#ffffff',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => unfulfillItem(item.id)}
-                      >
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M3 7v6h6" />
-                          <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                  {renderOptions(item.optionsSnapshot)}
-                </div>
                 );
               })}
-            </div>
-          </div>
-        );
-      })}
-        {orders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No active orders</p>}
+              {orders.length === 0 && <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No active orders</p>}
+            </>
+          );
+        })()}
       </div>
 
       {showHistoryModal && (

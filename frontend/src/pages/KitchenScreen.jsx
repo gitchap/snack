@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { SocketContext, AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
 import useFavicon from '../hooks/useFavicon';
 import { formatTicketCode } from '../utils/formatTicket';
 import { useActionLock } from '../hooks/useActionLock';
+import { partitionOrderItems } from '../utils/partitionTickets';
 
 export default function KitchenScreen() {
   useFavicon('kitchen.png', 'Kitchen Display - Snack Shack');
@@ -12,6 +13,31 @@ export default function KitchenScreen() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [confirmUndoOrder, setConfirmUndoOrder] = useState(null);
+  const gridRef = useRef(null);
+  const [gridHeight, setGridHeight] = useState(typeof window !== 'undefined' ? window.innerHeight - 100 : 800);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      if (gridRef.current) {
+        setGridHeight(gridRef.current.clientHeight);
+      } else {
+        setGridHeight(window.innerHeight - 100);
+      }
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    let observer;
+    if (window.ResizeObserver && gridRef.current) {
+      observer = new ResizeObserver(() => updateHeight());
+      observer.observe(gridRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateHeight);
+      if (observer) observer.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     fetch('/api/orders/active')
@@ -104,78 +130,118 @@ export default function KitchenScreen() {
         </div>
       </div>
       
-      <div className="main-content kitchen-grid">
+      <div ref={gridRef} className="main-content kitchen-grid">
         {(() => {
           const kitchenOrders = orders.filter(order => 
             order.orderItems && order.orderItems.some(item => item.menuItem?.requiresCooking !== false)
           );
 
+          // Partition each order dynamically based on measured screen/container height
+          const ticketParts = [];
+          kitchenOrders.forEach((order, queueIndex) => {
+            const parts = partitionOrderItems(
+              order, 
+              gridHeight, 
+              items => items.filter(item => item.menuItem?.requiresCooking !== false)
+            );
+            parts.forEach(part => {
+              ticketParts.push({ ...part, queueIndex });
+            });
+          });
+
           return (
             <>
-              {kitchenOrders.map((order, index) => {
-                const isFirstInQueue = index === 0;
-                const cookingItems = (order.orderItems || []).filter(item => item.menuItem?.requiresCooking !== false);
+              {ticketParts.map((part) => {
+                const isFirstInQueue = part.queueIndex === 0;
+                const isReady = part.kitchenStatus === 'ready';
 
                 return (
                   <div 
-                    key={order.id} 
-                    className={`glass glass-card ticket ${order.kitchenStatus === 'ready' ? 'ticket-ready' : 'ticket-pending'}`}
+                    key={part.cardPartKey} 
+                    className={`glass glass-card ticket ${isReady ? 'ticket-ready' : 'ticket-pending'}`}
                     style={{
-                      borderColor: isFirstInQueue && order.kitchenStatus !== 'ready' ? 'var(--primary)' : undefined,
-                      boxShadow: isFirstInQueue && order.kitchenStatus !== 'ready' ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
+                      borderColor: isFirstInQueue && !isReady ? 'var(--primary)' : undefined,
+                      boxShadow: isFirstInQueue && !isReady ? '0 0 10px rgba(139, 92, 246, 0.3)' : undefined
                     }}
                   >
-                    <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 0 }}>
-                        {/* Column 1: Queue Badge */}
-                        <span style={{ 
-                          fontSize: '0.85rem', 
-                          padding: '0.25rem 0.55rem',
-                          borderRadius: 'var(--radius-md)', 
-                          background: isFirstInQueue ? 'var(--primary)' : 'var(--glass-border)', 
-                          color: 'var(--text-main)',
-                          fontWeight: '800',
-                          flexShrink: 0,
-                          marginTop: '0.05rem'
-                        }}>
-                          #{index + 1} {isFirstInQueue ? 'NEXT' : ''}
-                        </span>
+                    {/* Header: First Part vs Continuation Part */}
+                    {!part.isContinuation ? (
+                      <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 0 }}>
+                          {/* Column 1: Queue Badge */}
+                          <span style={{ 
+                            fontSize: '0.85rem', 
+                            padding: '0.25rem 0.55rem',
+                            borderRadius: 'var(--radius-md)', 
+                            background: isFirstInQueue ? 'var(--primary)' : 'var(--glass-border)', 
+                            color: 'var(--text-main)',
+                            fontWeight: '800',
+                            flexShrink: 0,
+                            marginTop: '0.05rem'
+                          }}>
+                            #{part.queueIndex + 1} {isFirstInQueue ? 'NEXT' : ''}
+                          </span>
 
-                        {/* Column 2: Name & Fire (Row 1), Ticket Code (Row 2, aligned under Name) */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                            <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
-                              {order.customerName || formatTicketCode(order.orderNumber)}
-                            </h3>
-                            {order.priority && (
-                              <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔥</span>
+                          {/* Column 2: Name & Fire (Row 1), Ticket Code & Part Badge (Row 2) */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                              <h3 style={{ margin: 0, fontSize: '1.35rem', lineHeight: '1.2', fontWeight: '800' }}>
+                                {part.customerName || formatTicketCode(part.orderNumber)}
+                              </h3>
+                              {part.priority && (
+                                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔥</span>
+                              )}
+                              {part.totalParts > 1 && (
+                                <span className="badge-cont" style={{ fontSize: '0.72rem', padding: '0.15rem 0.4rem' }}>
+                                  Part 1/{part.totalParts}
+                                </span>
+                              )}
+                            </div>
+                            {part.customerName && (
+                              <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>
+                                {formatTicketCode(part.orderNumber)}
+                              </div>
                             )}
                           </div>
-                          {order.customerName && (
-                            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: '500' }}>
-                              {formatTicketCode(order.orderNumber)}
-                            </div>
-                          )}
                         </div>
-                      </div>
 
-                      {/* Status badge — right */}
-                      {order.kitchenStatus === 'pending' ? (
-                        <span className="badge badge-pending">Cooking...</span>
-                      ) : (
-                        <span 
-                          className="badge badge-ready" 
-                          title="Tap to Undo Food Ready"
-                          onClick={() => setConfirmUndoOrder(order)}
-                        >
-                          Food Ready ↩
-                        </span>
-                      )}
-                    </div>
+                        {/* Status badge — right */}
+                        {part.kitchenStatus === 'pending' ? (
+                          <span className="badge badge-pending">Cooking...</span>
+                        ) : (
+                          <span 
+                            className="badge badge-ready" 
+                            title="Tap to Undo Food Ready"
+                            onClick={() => setConfirmUndoOrder(part)}
+                          >
+                            Food Ready ↩
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      /* Continuation Top Header */
+                      <div className="ticket-continuation-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', minWidth: 0 }}>
+                          <span className="badge-cont">#{part.queueIndex + 1} (Cont.)</span>
+                          <strong style={{ fontSize: '1.15rem', color: 'var(--text-main)' }}>
+                            {part.customerName || formatTicketCode(part.orderNumber)}
+                          </strong>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                            Part {part.partIndex} of {part.totalParts}
+                          </span>
+                        </div>
+                        {part.kitchenStatus === 'pending' ? (
+                          <span className="badge badge-pending" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>Cooking...</span>
+                        ) : (
+                          <span className="badge badge-ready" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>Food Ready</span>
+                        )}
+                      </div>
+                    )}
                   
+                    {/* Items for this part */}
                     <div className="ticket-items">
-                      {cookingItems.map(item => {
-                        const isReady = item.kitchenItemStatus === 'ready';
+                      {part.partitionedItems.map(item => {
+                        const isItemReady = item.kitchenItemStatus === 'ready';
                         return (
                           <div 
                             key={item.id} 
@@ -183,8 +249,8 @@ export default function KitchenScreen() {
                             style={{ 
                               flexDirection: 'column',
                               alignItems: 'stretch',
-                              background: isReady ? 'var(--success-dim)' : 'var(--glass-bg)',
-                              border: isReady ? '1px solid var(--success-border)' : '1px solid var(--glass-border)',
+                              background: isItemReady ? 'var(--success-dim)' : 'var(--glass-bg)',
+                              border: isItemReady ? '1px solid var(--success-border)' : '1px solid var(--glass-border)',
                               borderRadius: 'var(--radius-sm)',
                               padding: '0.85rem',
                               transition: 'all 0.2s ease'
@@ -210,15 +276,15 @@ export default function KitchenScreen() {
                                   fontWeight: '500', 
                                   color: 'var(--text-main)', 
                                   letterSpacing: '0.01em',
-                                  textDecoration: isReady ? 'line-through' : 'none', 
-                                  opacity: isReady ? 0.65 : 1,
+                                  textDecoration: isItemReady ? 'line-through' : 'none', 
+                                  opacity: isItemReady ? 0.65 : 1,
                                   lineHeight: '1.2'
                                 }}>
                                   {item.menuItem?.name || 'Unknown Item'}
                                 </span>
                               </div>
                               <button 
-                                className={`btn ${isReady ? 'btn-success' : 'btn-outline'}`} 
+                                className={`btn ${isItemReady ? 'btn-success' : 'btn-outline'}`} 
                                 style={{ 
                                   minHeight: 'var(--touch-min)',
                                   padding: '0 1rem',
@@ -228,7 +294,7 @@ export default function KitchenScreen() {
                                 }}
                                 onClick={() => toggleKitchenItem(item.id)}
                               >
-                                {isReady ? '✓ Ready' : 'Prep'}
+                                {isItemReady ? '✓ Ready' : 'Prep'}
                               </button>
                             </div>
                             {renderOptions(item.optionsSnapshot)}
@@ -236,12 +302,20 @@ export default function KitchenScreen() {
                         );
                       })}
                     </div>
+
+                    {/* Bottom Continuation Banner */}
+                    {part.hasContinuationAfter && (
+                      <div className="ticket-continuation-footer">
+                        <span>⬇ Continues in next column ➔</span>
+                      </div>
+                    )}
                   
-                    {order.kitchenStatus === 'pending' && (
+                    {/* Food Ready button on final part */}
+                    {!part.hasContinuationAfter && part.kitchenStatus === 'pending' && (
                       <button 
                         className="btn btn-success" 
-                        style={{ marginTop: '1rem', width: '100%' }}
-                        onClick={() => markReady(order.id)}
+                        style={{ marginTop: '0.75rem', width: '100%' }}
+                        onClick={() => markReady(part.id)}
                       >
                         Food Ready
                       </button>
