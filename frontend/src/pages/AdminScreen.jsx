@@ -23,7 +23,7 @@ function MenuItemCard({ item, onClick }) {
           <span style={{ 
             fontSize: '0.75rem', 
             fontWeight: '600', 
-            color: isCooking ? 'var(--warning)' : '#60a5fa', 
+            color: isCooking ? 'var(--warning)' : 'var(--info)', 
             textTransform: 'uppercase', 
             letterSpacing: '0.04em' 
           }}>
@@ -397,7 +397,7 @@ export default function AdminScreen() {
                     type="number"
                     step="0.01"
                     min="0"
-                    style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1rem', fontFamily: 'inherit', padding: '0.75rem 0' }}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', width: '100%', outline: 'none', fontSize: '1rem', fontFamily: 'inherit', padding: '0.75rem 0' }}
                     placeholder="0.00"
                     value={newItemPrice}
                     onChange={e => setNewItemPrice(e.target.value)}

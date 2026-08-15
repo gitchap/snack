@@ -240,7 +240,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
                   type="number"
                   step="0.01"
                   min="0"
-                  style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1rem', fontFamily: 'inherit', padding: '0.75rem 0' }}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', width: '100%', outline: 'none', fontSize: '1rem', fontFamily: 'inherit', padding: '0.75rem 0' }}
                   value={price}
                   onChange={e => setPrice(e.target.value)}
                   onBlur={() => {

@@ -255,11 +255,11 @@ export default function OrderScreen() {
               <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: '600' }}>Cash Tendered / Change Calculator</label>
               
               {/* Quick Cash Buttons */}
-              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                 <button 
                   type="button" 
                   className="btn btn-outline" 
-                  style={{ flex: 1, minWidth: '48px', padding: '0.4rem 0.2rem', fontSize: '0.85rem', fontWeight: '700' }}
+                  style={{ flex: 1, minWidth: 'var(--touch-min)', padding: '0.4rem 0.25rem', fontSize: '0.9rem', fontWeight: '700', borderRadius: 'var(--radius-md)' }}
                   onClick={() => handleQuickCash('exact')}
                   disabled={cartTotal <= 0}
                 >
@@ -268,7 +268,7 @@ export default function OrderScreen() {
                 <button 
                   type="button" 
                   className="btn btn-outline" 
-                  style={{ flex: 1, minWidth: '40px', padding: '0.4rem 0.2rem', fontSize: '0.85rem', fontWeight: '700' }}
+                  style={{ flex: 1, minWidth: 'var(--touch-min)', padding: '0.4rem 0.25rem', fontSize: '0.9rem', fontWeight: '700', borderRadius: 'var(--radius-md)' }}
                   onClick={() => handleQuickCash('1')}
                 >
                   $1
@@ -276,7 +276,7 @@ export default function OrderScreen() {
                 <button 
                   type="button" 
                   className="btn btn-outline" 
-                  style={{ flex: 1, minWidth: '40px', padding: '0.4rem 0.2rem', fontSize: '0.85rem', fontWeight: '700' }}
+                  style={{ flex: 1, minWidth: 'var(--touch-min)', padding: '0.4rem 0.25rem', fontSize: '0.9rem', fontWeight: '700', borderRadius: 'var(--radius-md)' }}
                   onClick={() => handleQuickCash('5')}
                 >
                   $5
@@ -284,7 +284,7 @@ export default function OrderScreen() {
                 <button 
                   type="button" 
                   className="btn btn-outline" 
-                  style={{ flex: 1, minWidth: '40px', padding: '0.4rem 0.2rem', fontSize: '0.85rem', fontWeight: '700' }}
+                  style={{ flex: 1, minWidth: 'var(--touch-min)', padding: '0.4rem 0.25rem', fontSize: '0.9rem', fontWeight: '700', borderRadius: 'var(--radius-md)' }}
                   onClick={() => handleQuickCash('10')}
                 >
                   $10
@@ -292,7 +292,7 @@ export default function OrderScreen() {
                 <button 
                   type="button" 
                   className="btn btn-outline" 
-                  style={{ flex: 1, minWidth: '40px', padding: '0.4rem 0.2rem', fontSize: '0.85rem', fontWeight: '700' }}
+                  style={{ flex: 1, minWidth: 'var(--touch-min)', padding: '0.4rem 0.25rem', fontSize: '0.9rem', fontWeight: '700', borderRadius: 'var(--radius-md)' }}
                   onClick={() => handleQuickCash('20')}
                 >
                   $20
@@ -313,7 +313,7 @@ export default function OrderScreen() {
                     const num = parseFloat(cashTendered);
                     if (!isNaN(num)) setCashTendered(num.toFixed(2));
                   }}
-                  style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold', padding: '0.75rem 0' }}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', width: '100%', outline: 'none', fontSize: '1.2rem', fontWeight: 'bold', padding: '0.75rem 0' }}
                 />
                 {cashTendered !== '' && (
                   <button 
@@ -328,9 +328,9 @@ export default function OrderScreen() {
               {cashTendered !== '' && !isNaN(parseFloat(cashTendered)) && parseFloat(cashTendered) >= cartTotal && (
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)',
+                  background: 'var(--success-dim)', border: '1px solid var(--success-border)',
                   borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem',
-                  fontSize: '1.15rem', fontWeight: 'bold', color: '#6ee7b7'
+                  fontSize: '1.15rem', fontWeight: 'bold', color: 'var(--success)'
                 }}>
                   <span>Change Due</span>
                   <span>${(parseFloat(cashTendered) - cartTotal).toFixed(2)}</span>
@@ -341,9 +341,9 @@ export default function OrderScreen() {
               {cashTendered !== '' && !isNaN(parseFloat(cashTendered)) && parseFloat(cashTendered) < cartTotal && (
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)',
+                  background: 'var(--danger-dim)', border: '1px solid var(--danger-border)',
                   borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem',
-                  fontSize: '1.15rem', fontWeight: 'bold', color: '#fca5a5'
+                  fontSize: '1.15rem', fontWeight: 'bold', color: 'var(--danger)'
                 }}>
                   <span>Still Owed</span>
                   <span>${(cartTotal - parseFloat(cashTendered)).toFixed(2)}</span>

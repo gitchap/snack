@@ -13,9 +13,14 @@
   --success-border: rgba(16, 185, 129, 0.3);
   --success-glow: rgba(16, 185, 129, 0.45);
   --danger: #ef4444;
+  --danger-dim: rgba(239, 68, 68, 0.12);
+  --danger-border: rgba(239, 68, 68, 0.35);
   --warning: #f59e0b;
   --warning-dim: rgba(245, 158, 11, 0.06);
   --warning-border: rgba(245, 158, 11, 0.4);
+  --info: #60a5fa;
+  --info-dim: rgba(96, 165, 250, 0.12);
+  --info-border: rgba(96, 165, 250, 0.35);
 
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
@@ -312,16 +317,23 @@ input[type="number"] {
   padding: 0 1rem;
 }
 
-.badge-shelf {
-  background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.4);
+.badge-shelf,
+.badge-grab {
+  background: var(--info-dim);
+  color: var(--info);
+  border: 1px solid var(--info-border);
 }
 
 .badge-kitchen {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: var(--warning-dim);
+  color: var(--warning);
+  border: 1px solid var(--warning-border);
+}
+
+.badge-done {
+  background: var(--success-dim);
+  color: var(--success);
+  border: 1px solid var(--success-border);
 }
 
 /* Menus & Tabs */

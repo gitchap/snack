@@ -246,15 +246,15 @@ export default function ServiceScreen() {
                       </span>
 
                       {isGrabAndGo ? (
-                        <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', background: 'rgba(96, 165, 250, 0.18)', color: '#93c5fd', border: '1px solid rgba(96, 165, 250, 0.35)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <span className="badge badge-shelf" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           🛍️ Grab & Go
                         </span>
                       ) : item.kitchenItemStatus === 'ready' ? (
-                        <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success-border)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <span className="badge badge-done" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           ✓ Food Ready
                         </span>
                       ) : (
-                        <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', background: 'var(--warning-dim)', color: 'var(--warning)', border: '1px solid var(--warning-border)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <span className="badge badge-kitchen" style={{ fontSize: '0.72rem', padding: '0.15rem 0.45rem', borderRadius: 'var(--radius-sm)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                           🍳 Cooking...
                         </span>
                       )}
