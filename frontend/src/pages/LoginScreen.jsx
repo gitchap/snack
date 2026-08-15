@@ -7,6 +7,7 @@ export default function LoginScreen() {
   useFavicon('order.png', 'Login - Snack Shack');
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
+  const [staySignedIn, setStaySignedIn] = useState(true);
   const [error, setError] = useState('');
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -21,13 +22,13 @@ export default function LoginScreen() {
       });
       const data = await res.json();
       if (res.ok) {
-        login(data.token, data.role);
+        login(data.token, data.role, staySignedIn);
         navigate(data.role === 'admin' ? '/admin' : '/order');
       } else {
-        setError(data.error);
+        setError(data.error || 'Invalid credentials');
       }
     } catch (err) {
-      setError('Connection failed');
+      setError('Connection failed. Please check network.');
     }
   };
 
@@ -54,7 +55,18 @@ export default function LoginScreen() {
             value={pin}
             onChange={(e) => setPin(e.target.value)}
           />
-          <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+          
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer', color: 'var(--text-subtle)', fontSize: '0.95rem', userSelect: 'none', marginTop: '0.25rem' }}>
+            <input 
+              type="checkbox" 
+              style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+              checked={staySignedIn} 
+              onChange={(e) => setStaySignedIn(e.target.checked)} 
+            />
+            Stay signed in on this device
+          </label>
+
+          <button type="submit" className="btn btn-primary" style={{ marginTop: '0.75rem', padding: '0.9rem', fontSize: '1.05rem', fontWeight: '700' }}>
             Login
           </button>
         </form>

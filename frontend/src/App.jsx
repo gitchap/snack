@@ -27,14 +27,26 @@ const isTokenExpired = (t) => {
   }
 };
 
+const getStoredToken = () => localStorage.getItem('token') || sessionStorage.getItem('token');
+const getStoredRole = () => localStorage.getItem('role') || sessionStorage.getItem('role');
+
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [role, setRole] = useState(localStorage.getItem('role'));
+  const [token, setToken] = useState(getStoredToken());
+  const [role, setRole] = useState(getStoredRole());
   const [sessionExpired, setSessionExpired] = useState(false);
 
-  const login = (newToken, newRole) => {
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('role', newRole);
+  const login = (newToken, newRole, staySignedIn = true) => {
+    if (staySignedIn) {
+      localStorage.setItem('token', newToken);
+      localStorage.setItem('role', newRole);
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('role');
+    } else {
+      sessionStorage.setItem('token', newToken);
+      sessionStorage.setItem('role', newRole);
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+    }
     setToken(newToken);
     setRole(newRole);
     setSessionExpired(false);
@@ -43,14 +55,16 @@ function App() {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('role');
     setToken(null);
     setRole(null);
   };
 
   useEffect(() => {
     // Validate stored token on mount
-    const storedToken = localStorage.getItem('token');
-    if (storedToken && isTokenExpired(storedToken)) {
+    const activeToken = getStoredToken();
+    if (activeToken && isTokenExpired(activeToken)) {
       setSessionExpired(true);
     }
 
