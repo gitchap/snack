@@ -95,7 +95,8 @@ export default function AdminScreen() {
   // User PIN form state
   const [pinUserId, setPinUserId] = useState('');
   const [newPin, setNewPin] = useState('');
-  const [pinMessage, setPinMessage] = useState('');
+  const [masterPassword, setMasterPassword] = useState('');
+  const [pinMessage, setPinMessage] = useState(null);
 
   // Database & Backup state
   const [dbStats, setDbStats] = useState(null);
@@ -359,12 +360,37 @@ export default function AdminScreen() {
 
   const handleChangePin = async (e) => {
     e.preventDefault();
-    const res = await fetch(`/api/admin/users/${pinUserId}/pin`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ pin: newPin })
-    });
-    if (res.ok) { setPinMessage('PIN updated!'); setNewPin(''); setTimeout(() => setPinMessage(''), 3000); }
+    if (!pinUserId) {
+      setPinMessage({ type: 'error', text: 'Please select an account.' });
+      return;
+    }
+    if (!newPin.trim()) {
+      setPinMessage({ type: 'error', text: 'Please enter a new PIN.' });
+      return;
+    }
+    if (!masterPassword) {
+      setPinMessage({ type: 'error', text: 'Master Admin Password is required to change PINs.' });
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/users/${pinUserId}/pin`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ pin: newPin.trim(), masterPassword })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPinMessage({ type: 'success', text: '✓ PIN successfully updated!' });
+        setNewPin('');
+        setMasterPassword('');
+        setTimeout(() => setPinMessage(null), 4000);
+      } else {
+        setPinMessage({ type: 'error', text: data.error || 'Failed to update PIN.' });
+      }
+    } catch (err) {
+      setPinMessage({ type: 'error', text: 'Connection error while updating PIN.' });
+    }
   };
 
   return (
@@ -606,10 +632,23 @@ export default function AdminScreen() {
         <div className="main-content" style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
           <div className="glass glass-card" style={{ width: '100%', maxWidth: '500px' }}>
             <h3>Manage Account PINs</h3>
-            {pinMessage && <div style={{ color: 'var(--success)', margin: '1rem 0' }}>{pinMessage}</div>}
-            <form onSubmit={handleChangePin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+            {pinMessage && (
+              <div style={{
+                color: pinMessage.type === 'success' ? 'var(--success)' : 'var(--danger)',
+                background: pinMessage.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                border: `1px solid ${pinMessage.type === 'success' ? 'var(--success)' : 'var(--danger)'}`,
+                padding: '0.75rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                marginTop: '1rem',
+                fontSize: '0.95rem',
+                fontWeight: '600'
+              }}>
+                {pinMessage.text}
+              </div>
+            )}
+            <form onSubmit={handleChangePin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1.5rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Select Account</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>Select Account</label>
                 <CustomSelect
                   options={users.map(u => ({ value: u.id, label: `${u.username} (${u.role})` }))}
                   value={pinUserId}
@@ -617,10 +656,34 @@ export default function AdminScreen() {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>New PIN</label>
-                <input type="password" className="input" placeholder="Enter new PIN" value={newPin} onChange={e => setNewPin(e.target.value)} />
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>New PIN</label>
+                <input 
+                  type="password" 
+                  className="input" 
+                  placeholder="Enter new 4-digit PIN" 
+                  value={newPin} 
+                  onChange={e => setNewPin(e.target.value)} 
+                />
               </div>
-              <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem', padding: '0.9rem' }}>Update PIN</button>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                  Master Admin Password <span style={{ color: 'var(--danger)' }}>*</span>
+                </label>
+                <input 
+                  type="password" 
+                  className="input" 
+                  placeholder="Enter server Master Admin Password" 
+                  value={masterPassword} 
+                  onChange={e => setMasterPassword(e.target.value)} 
+                  autoComplete="current-password"
+                />
+                <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                  Configured in server <code>.env</code> (<code>ADMIN_MASTER_PASSWORD</code>) to protect against unauthorized PIN modifications.
+                </span>
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem', padding: '0.9rem', fontSize: '1.05rem', fontWeight: '700' }}>
+                Update PIN
+              </button>
             </form>
           </div>
         </div>

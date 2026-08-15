@@ -71,18 +71,24 @@ app.get('/api/admin/users', authenticateToken, async (req, res) => {
   }
 });
 
+const ADMIN_MASTER_PASSWORD = process.env.ADMIN_MASTER_PASSWORD || 'snackmaster123';
+
 app.put('/api/admin/users/:id/pin', authenticateToken, async (req, res) => {
   if (req.user.role !== 'admin') return res.sendStatus(403);
   try {
-    const { pin } = req.body;
-    if (!pin || pin.trim().length === 0) return res.status(400).json({ error: 'PIN required' });
+    const { pin, masterPassword } = req.body;
+    if (!pin || pin.trim().length === 0) return res.status(400).json({ error: 'New PIN is required' });
     
+    if (!masterPassword || masterPassword !== ADMIN_MASTER_PASSWORD) {
+      return res.status(403).json({ error: 'Invalid Master Admin Password. PIN change denied.' });
+    }
+
     const pinHash = await bcrypt.hash(pin, 10);
     await prisma.user.update({
       where: { id: parseInt(req.params.id) },
       data: { pin: pinHash }
     });
-    res.json({ success: true });
+    res.json({ success: true, message: 'PIN updated successfully' });
   } catch (e) {
     console.error('Update PIN error:', e);
     res.status(500).json({ error: 'Internal server error' });
