@@ -11,29 +11,29 @@ export function partitionOrderItems(order, availableHeight, filterItemsFn) {
   const items = filterItemsFn ? filterItemsFn(allItems) : allItems;
   if (!items || items.length === 0) return [];
 
-  // Robust cross-platform layout constants (in pixels) for Firefox Linux, Edge, Chrome, Safari:
-  // - .ticket card padding (1.5rem x 2) + border: 60px
-  // - .ticket-header (title, queue badge, subtext, status): 78px
-  // - .ticket-continuation-header: 58px
-  // - .ticket-item base (44px touch-min button + 28px padding + 2px border + 8px margin + line-height buffer): 88px
-  // - .options-list (title, chips, spacing): ~52px per option group
-  // - .ticket-continuation-footer ("⬇ Continues in next column ➔"): 54px
-  // - Action button ("Food Ready" / "Complete Order") + margin: 64px
-  // - Column bottom safety buffer: 55px
-  const CARD_CHROME_HEIGHT = 60;
-  const MAIN_HEADER_HEIGHT = 78;
-  const CONT_HEADER_HEIGHT = 58;
-  const ACTION_BTN_HEIGHT = 64;
-  const CONT_FOOTER_HEIGHT = 54;
-  const COLUMN_SAFETY_BUFFER = 55;
+  // Calibrated layout constants (in pixels):
+  // - .ticket card padding + border: 48px
+  // - .ticket-header: 68px
+  // - .ticket-continuation-header: 52px
+  // - .ticket-item base: 78px
+  // - .options-list: ~48px per option group
+  // - .ticket-continuation-footer: 46px
+  // - Action button + margin: 56px
+  // - Column bottom safety buffer: 20px
+  const CARD_CHROME_HEIGHT = 48;
+  const MAIN_HEADER_HEIGHT = 68;
+  const CONT_HEADER_HEIGHT = 52;
+  const ACTION_BTN_HEIGHT = 56;
+  const CONT_FOOTER_HEIGHT = 46;
+  const COLUMN_SAFETY_BUFFER = 20;
 
   const estimateItemHeight = (item) => {
-    let itemHeight = 88; // base single item with title, bullet, and button
+    let itemHeight = 78; // base single item with title, bullet, and button
     try {
       const snap = typeof item.optionsSnapshot === 'string' ? JSON.parse(item.optionsSnapshot) : item.optionsSnapshot;
       if (snap && typeof snap === 'object') {
         const optionGroups = Object.entries(snap).filter(([_, val]) => Array.isArray(val) && val.length > 0);
-        itemHeight += optionGroups.length * 52;
+        itemHeight += optionGroups.length * 48;
       }
     } catch (_) {}
     return itemHeight;
