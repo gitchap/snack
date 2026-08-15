@@ -267,7 +267,7 @@ export default function ItemEditModal({ item, categories, token, onClose, onSave
                 checked={requiresCooking} 
                 onChange={e => setRequiresCooking(e.target.checked)} 
               />
-              Requires Cooking (Cooked item)
+              Requires Cooking
             </label>
           </div>
 

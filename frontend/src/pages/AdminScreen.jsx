@@ -451,7 +451,7 @@ export default function AdminScreen() {
                   checked={newItemRequiresCooking} 
                   onChange={e => setNewItemRequiresCooking(e.target.checked)} 
                 />
-                Requires Cooking (Cooked item)
+                Requires Cooking
               </label>
 
               {pendingOptions.length > 0 && (
