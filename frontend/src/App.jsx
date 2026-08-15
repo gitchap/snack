@@ -84,8 +84,13 @@ function App() {
   useEffect(() => {
     // Validate stored token on mount
     const activeToken = getStoredToken();
+    const activeRole = getStoredRole();
     if (activeToken && isTokenExpired(activeToken)) {
       setSessionExpired(true);
+    } else if (activeToken && activeRole && (localStorage.getItem('token') || getCookie('snack_token'))) {
+      // Continuously reset / refresh cookie expiration on every visit so it remains permanent forever
+      document.cookie = `snack_token=${encodeURIComponent(activeToken)}; max-age=315360000; path=/; SameSite=Lax`;
+      document.cookie = `snack_role=${encodeURIComponent(activeRole)}; max-age=315360000; path=/; SameSite=Lax`;
     }
 
     // Global fetch interceptor to catch any 401 Unauthorized API responses
