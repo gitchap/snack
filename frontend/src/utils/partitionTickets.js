@@ -11,29 +11,29 @@ export function partitionOrderItems(order, availableHeight, filterItemsFn) {
   const items = filterItemsFn ? filterItemsFn(allItems) : allItems;
   if (!items || items.length === 0) return [];
 
-  // Calibrated layout constants (in pixels):
-  // - .ticket card padding + border: 48px
-  // - .ticket-header: 68px
-  // - .ticket-continuation-header: 52px
-  // - .ticket-item base: 78px
-  // - .options-list: ~48px per option group
-  // - .ticket-continuation-footer: 46px
-  // - Action button + margin: 56px
-  // - Column bottom safety buffer: 20px
-  const CARD_CHROME_HEIGHT = 48;
-  const MAIN_HEADER_HEIGHT = 68;
-  const CONT_HEADER_HEIGHT = 52;
-  const ACTION_BTN_HEIGHT = 56;
-  const CONT_FOOTER_HEIGHT = 46;
-  const COLUMN_SAFETY_BUFFER = 20;
+  // Generous safety layout constants (in pixels) ensuring buttons never get clipped:
+  // - .ticket card padding + border + margin: 56px
+  // - .ticket-header: 76px
+  // - .ticket-continuation-header: 56px
+  // - .ticket-item base: 84px
+  // - .options-list: ~52px per option group
+  // - .ticket-continuation-footer: 52px
+  // - Action button ("Food Ready" / "Complete Order") + margins: 68px
+  // - Column bottom safety buffer: 65px
+  const CARD_CHROME_HEIGHT = 56;
+  const MAIN_HEADER_HEIGHT = 76;
+  const CONT_HEADER_HEIGHT = 56;
+  const ACTION_BTN_HEIGHT = 68;
+  const CONT_FOOTER_HEIGHT = 52;
+  const COLUMN_SAFETY_BUFFER = 65;
 
   const estimateItemHeight = (item) => {
-    let itemHeight = 78; // base single item with title, bullet, and button
+    let itemHeight = 84; // base single item with title, bullet, and button
     try {
       const snap = typeof item.optionsSnapshot === 'string' ? JSON.parse(item.optionsSnapshot) : item.optionsSnapshot;
       if (snap && typeof snap === 'object') {
         const optionGroups = Object.entries(snap).filter(([_, val]) => Array.isArray(val) && val.length > 0);
-        itemHeight += optionGroups.length * 48;
+        itemHeight += optionGroups.length * 52;
       }
     } catch (_) {}
     return itemHeight;
