@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import io from 'socket.io-client';
 
 import LoginScreen from './pages/LoginScreen';
@@ -27,8 +27,21 @@ const isTokenExpired = (t) => {
   }
 };
 
-const getStoredToken = () => localStorage.getItem('token') || sessionStorage.getItem('token');
-const getStoredRole = () => localStorage.getItem('role') || sessionStorage.getItem('role');
+const getCookie = (name) => {
+  if (typeof document === 'undefined') return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+  return null;
+};
+
+const getStoredToken = () => {
+  return localStorage.getItem('token') || sessionStorage.getItem('token') || getCookie('snack_token');
+};
+
+const getStoredRole = () => {
+  return localStorage.getItem('role') || sessionStorage.getItem('role') || getCookie('snack_role');
+};
 
 function App() {
   const [token, setToken] = useState(getStoredToken());
@@ -41,11 +54,16 @@ function App() {
       localStorage.setItem('role', newRole);
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('role');
+      // Set long-lived persistent cookie for browser/Chromium restarts
+      document.cookie = `snack_token=${encodeURIComponent(newToken)}; max-age=315360000; path=/; SameSite=Lax`;
+      document.cookie = `snack_role=${encodeURIComponent(newRole)}; max-age=315360000; path=/; SameSite=Lax`;
     } else {
       sessionStorage.setItem('token', newToken);
       sessionStorage.setItem('role', newRole);
       localStorage.removeItem('token');
       localStorage.removeItem('role');
+      document.cookie = `snack_token=; max-age=0; path=/; SameSite=Lax`;
+      document.cookie = `snack_role=; max-age=0; path=/; SameSite=Lax`;
     }
     setToken(newToken);
     setRole(newRole);
@@ -57,6 +75,8 @@ function App() {
     localStorage.removeItem('role');
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('role');
+    document.cookie = `snack_token=; max-age=0; path=/; SameSite=Lax`;
+    document.cookie = `snack_role=; max-age=0; path=/; SameSite=Lax`;
     setToken(null);
     setRole(null);
   };
@@ -93,12 +113,13 @@ function App() {
         <BrowserRouter>
           <div className="app-container">
             <Routes>
-              <Route path="/login" element={<LoginScreen />} />
+              <Route path="/" element={<RootRedirect />} />
+              <Route path="/login" element={<LoginRoute />} />
               <Route path="/order" element={<ProtectedRoute><OrderScreen /></ProtectedRoute>} />
               <Route path="/kitchen" element={<ProtectedRoute><KitchenScreen /></ProtectedRoute>} />
               <Route path="/service" element={<ProtectedRoute><ServiceScreen /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute adminOnly><AdminScreen /></ProtectedRoute>} />
-              <Route path="*" element={<Navigate to="/login" />} />
+              <Route path="*" element={<RootRedirect />} />
             </Routes>
 
             {/* Session Expired Pop-up Modal */}
@@ -131,6 +152,22 @@ function App() {
   );
 }
 
+function RootRedirect() {
+  const { token, role } = React.useContext(AuthContext);
+  if (token && !isTokenExpired(token)) {
+    return <Navigate to={role === 'admin' ? '/admin' : '/order'} replace />;
+  }
+  return <Navigate to="/login" replace />;
+}
+
+function LoginRoute() {
+  const { token, role } = React.useContext(AuthContext);
+  if (token && !isTokenExpired(token)) {
+    return <Navigate to={role === 'admin' ? '/admin' : '/order'} replace />;
+  }
+  return <LoginScreen />;
+}
+
 function ProtectedRoute({ children, adminOnly }) {
   const { token, role, triggerSessionExpired } = React.useContext(AuthContext);
   
@@ -138,10 +175,10 @@ function ProtectedRoute({ children, adminOnly }) {
     if (token && isTokenExpired(token)) {
       triggerSessionExpired();
     }
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
   
-  if (adminOnly && role !== 'admin') return <Navigate to="/order" />;
+  if (adminOnly && role !== 'admin') return <Navigate to="/order" replace />;
   return children;
 }
 
