@@ -226,9 +226,9 @@ h3 {
   display: block;
   width: 100%;
   margin-bottom: 1.25rem;
-  break-inside: auto;
-  page-break-inside: auto;
-  -webkit-column-break-inside: auto;
+  break-inside: avoid-column;
+  page-break-inside: avoid;
+  -webkit-column-break-inside: avoid;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
@@ -441,9 +441,9 @@ input[type="number"] {
 .ticket {
   display: block;
   transition: all 0.3s ease;
-  break-inside: auto;
-  page-break-inside: auto;
-  -webkit-column-break-inside: auto;
+  break-inside: avoid-column;
+  page-break-inside: avoid;
+  -webkit-column-break-inside: avoid;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
