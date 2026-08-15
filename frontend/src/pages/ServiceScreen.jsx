@@ -17,9 +17,24 @@ export default function ServiceScreen() {
   const gridRef = useRef(null);
 
   useEffect(() => {
-    fetch('/api/orders/active')
-      .then(res => res.json())
-      .then(data => setOrders(data));
+    const fetchActiveOrders = () => {
+      fetch('/api/orders/active')
+        .then(res => {
+          if (res.status === 401) {
+            logout();
+            return [];
+          }
+          return res.json();
+        })
+        .then(data => {
+          if (Array.isArray(data)) setOrders(data);
+        })
+        .catch(err => console.error('Failed to fetch active orders:', err));
+    };
+
+    fetchActiveOrders();
+
+    socket.on('connect', fetchActiveOrders);
 
     socket.on('new_order', (order) => {
       setOrders(prev => {
@@ -72,13 +87,14 @@ export default function ServiceScreen() {
     });
 
     return () => {
+      socket.off('connect', fetchActiveOrders);
       socket.off('new_order');
       socket.off('order_updated');
       socket.off('item_fulfilled');
       socket.off('item_unfulfilled');
       socket.off('order_completed');
     };
-  }, [socket]);
+  }, [socket, logout]);
 
   const fetchHistory = async () => {
     try {
