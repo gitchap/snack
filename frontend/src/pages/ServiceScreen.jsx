@@ -163,6 +163,7 @@ export default function ServiceScreen() {
         {ticketParts.map((part) => {
           const isFirstInQueue = part.queueIndex === 0;
           const isFoodReady = part.kitchenStatus === 'ready';
+          const orderTotal = (part.orderItems || []).reduce((acc, curr) => acc + (parseFloat(curr.menuItem?.price) || 0) * (curr.quantity || 1), 0);
 
           return (
             <div 
@@ -215,12 +216,19 @@ export default function ServiceScreen() {
                           </div>
                         </div>
 
-                        {/* Status badge — right */}
-                        {part.kitchenStatus === 'pending' ? (
-                          <span className="badge badge-pending">Cooking...</span>
-                        ) : (
-                          <span className="badge badge-ready">Food Ready</span>
-                        )}
+                        {/* Status badge & Order Total — right */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem', flexShrink: 0 }}>
+                          {part.kitchenStatus === 'pending' ? (
+                            <span className="badge badge-pending">Cooking...</span>
+                          ) : (
+                            <span className="badge badge-ready">Food Ready</span>
+                          )}
+                          {orderTotal > 0 && (
+                            <span style={{ color: 'var(--success)', fontWeight: '800', fontSize: '1.05rem' }}>
+                              ${orderTotal.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       /* Continuation Top Header */
@@ -234,11 +242,18 @@ export default function ServiceScreen() {
                             Part {part.partIndex} of {part.totalParts}
                           </span>
                         </div>
-                        {part.kitchenStatus === 'pending' ? (
-                          <span className="badge badge-pending" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>Cooking...</span>
-                        ) : (
-                          <span className="badge badge-ready" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>Food Ready</span>
-                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                          {part.kitchenStatus === 'pending' ? (
+                            <span className="badge badge-pending" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>Cooking...</span>
+                          ) : (
+                            <span className="badge badge-ready" style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>Food Ready</span>
+                          )}
+                          {orderTotal > 0 && (
+                            <span style={{ color: 'var(--success)', fontWeight: '800', fontSize: '0.95rem' }}>
+                              ${orderTotal.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   
@@ -354,24 +369,36 @@ export default function ServiceScreen() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {historyOrders.map(order => (
-                <div key={order.id} className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <strong>{order.customerName || `Order #${order.orderNumber}`}</strong>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(order.createdAt).toLocaleTimeString()}</span>
+              {historyOrders.map(order => {
+                const orderTotal = (order.orderItems || []).reduce((acc, curr) => acc + (parseFloat(curr.menuItem?.price) || 0) * (curr.quantity || 1), 0);
+                return (
+                  <div key={order.id} className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <strong style={{ fontSize: '1.05rem' }}>{order.customerName || `Order #${order.orderNumber}`}</strong>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                          {new Date(order.createdAt).toLocaleTimeString()}
+                        </div>
+                      </div>
+                      {orderTotal > 0 && (
+                        <span style={{ color: 'var(--success)', fontWeight: '800', fontSize: '1.1rem' }}>
+                          ${orderTotal.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      {(order.orderItems || []).map(i => i.menuItem?.name || 'Item').join(' • ')}
+                    </div>
+                    <button 
+                      className="btn btn-primary" 
+                      style={{ marginTop: '0.5rem', padding: '0.45rem 0.8rem', fontSize: '0.85rem' }}
+                      onClick={() => handleRecallOrder(order.id)}
+                    >
+                      ↩ Recall Order to Active Queue
+                    </button>
                   </div>
-                  <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                    {(order.orderItems || []).map(i => i.menuItem?.name || 'Item').join(' • ')}
-                  </div>
-                  <button 
-                    className="btn btn-primary" 
-                    style={{ marginTop: '0.5rem', padding: '0.45rem 0.8rem', fontSize: '0.85rem' }}
-                    onClick={() => handleRecallOrder(order.id)}
-                  >
-                    ↩ Recall Order to Active Queue
-                  </button>
-                </div>
-              ))}
+                );
+              })}
               {historyOrders.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>No completed orders found</p>}
             </div>
           </div>

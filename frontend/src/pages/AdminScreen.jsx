@@ -543,39 +543,57 @@ export default function AdminScreen() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
-            {historyOrders.map(order => (
-              <div key={order.id} className="glass glass-card ticket">
-                <div className="ticket-header">
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '1.25rem' }}>
-                      {order.customerName || formatTicketCode(order.orderNumber)}
-                    </h3>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                      {order.customerName ? `${formatTicketCode(order.orderNumber)} • ` : ''}{new Date(order.createdAt).toLocaleString()}
+            {historyOrders.map(order => {
+              const orderTotal = (order.orderItems || []).reduce((acc, curr) => acc + (parseFloat(curr.menuItem?.price) || 0) * (curr.quantity || 1), 0);
+              return (
+                <div key={order.id} className="glass glass-card ticket">
+                  <div className="ticket-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1.25rem' }}>
+                        {order.customerName || formatTicketCode(order.orderNumber)}
+                      </h3>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                        {order.customerName ? `${formatTicketCode(order.orderNumber)} • ` : ''}{new Date(order.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
+                      <span className="badge" style={{ background: order.status === 'completed' ? 'var(--success)' : 'var(--danger)', color: '#fff' }}>
+                        {order.status === 'completed' ? 'Completed' : 'Recalled'}
+                      </span>
+                      {orderTotal > 0 && (
+                        <span style={{ color: 'var(--success)', fontWeight: '800', fontSize: '1.1rem' }}>
+                          ${orderTotal.toFixed(2)}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <span className="badge" style={{ background: order.status === 'completed' ? 'var(--success)' : 'var(--danger)', color: '#fff' }}>
-                    {order.status === 'completed' ? 'Completed' : 'Recalled'}
-                  </span>
-                </div>
 
-                <div className="ticket-items" style={{ margin: '0.75rem 0' }}>
-                  {(order.orderItems || []).map(item => (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.95rem' }}>
-                      <span>{item.quantity}x {item.menuItem?.name || 'Item'}</span>
-                    </div>
-                  ))}
-                </div>
+                  <div className="ticket-items" style={{ margin: '0.75rem 0' }}>
+                    {(order.orderItems || []).map(item => (
+                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)', fontSize: '0.95rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                          <span className="item-bullet" />
+                          <span>{item.menuItem?.name || 'Item'}</span>
+                        </div>
+                        {item.menuItem?.price > 0 && (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: '500' }}>
+                            ${((parseFloat(item.menuItem?.price) || 0) * (item.quantity || 1)).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
 
-                <button 
-                  className="btn btn-outline" 
-                  style={{ width: '100%', borderColor: 'var(--primary)', color: 'var(--primary)', marginTop: '0.5rem', minHeight: 'var(--touch-min)' }}
-                  onClick={() => handleRecallOrder(order.id)}
-                >
-                  ↩ Recall to Active Queue
-                </button>
-              </div>
-            ))}
+                  <button 
+                    className="btn btn-outline" 
+                    style={{ width: '100%', borderColor: 'var(--primary)', color: 'var(--primary)', marginTop: '0.5rem', minHeight: 'var(--touch-min)' }}
+                    onClick={() => handleRecallOrder(order.id)}
+                  >
+                    ↩ Recall to Active Queue
+                  </button>
+                </div>
+              );
+            })}
             {historyOrders.length === 0 && (
               <p style={{ color: 'var(--text-muted)', gridColumn: '1 / -1', textAlign: 'center', marginTop: '2rem' }}>No past orders found</p>
             )}
