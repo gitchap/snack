@@ -840,6 +840,27 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('fulfill_order', async ({ orderId }) => {
+    try {
+      await prisma.orderItem.updateMany({
+        where: { orderId },
+        data: { itemStatus: 'fulfilled', kitchenItemStatus: 'ready' }
+      });
+      const completedOrder = await prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'completed', kitchenStatus: 'ready' },
+        include: {
+          orderItems: {
+            include: { menuItem: true }
+          }
+        }
+      });
+      io.emit('order_completed', completedOrder);
+    } catch (e) {
+      console.error('Error in fulfill_order:', e);
+    }
+  });
+
   socket.on('unfulfill_item', async ({ itemId }) => {
     try {
       const currentItem = await prisma.orderItem.findUnique({

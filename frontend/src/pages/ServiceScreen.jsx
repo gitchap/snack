@@ -112,6 +112,10 @@ export default function ServiceScreen() {
     socket.emit('fulfill_item', { itemId });
   });
 
+  const handleFulfillOrder = withLock('fulfillOrder', (orderId) => {
+    socket.emit('fulfill_order', { orderId });
+  });
+
   const unfulfillItem = withLock('unfulfillItem', (itemId) => {
     socket.emit('unfulfill_item', { itemId });
   });
@@ -377,6 +381,29 @@ export default function ServiceScreen() {
                       <div className="ticket-continuation-footer">
                         <span>⬇ Continues in next column ➔</span>
                       </div>
+                    )}
+
+                    {/* Hand Off Entire Order Button on Final Card Part */}
+                    {!part.hasContinuationAfter && (
+                      <button 
+                        className="btn btn-success" 
+                        style={{ 
+                          marginTop: '0.85rem', 
+                          width: '100%', 
+                          padding: '0.85rem', 
+                          fontSize: '1.05rem', 
+                          fontWeight: '800',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          borderRadius: 'var(--radius-md)',
+                          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+                        }}
+                        onClick={() => handleFulfillOrder(part.id)}
+                      >
+                        <span>✓ Hand Off Entire Order</span>
+                      </button>
                     )}
                   </div>
                 );
